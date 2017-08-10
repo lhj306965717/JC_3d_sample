@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static android.R.attr.y;
+
 /**
  * Created by Nathen on 16/7/30.
  */
@@ -588,8 +590,9 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 
     public void initTextureView() {
         removeTextureView();
-        JCMediaManager.textureView = new JCResizeTextureView(getContext());
-        JCMediaManager.textureView.setSurfaceTextureListener(JCMediaManager.instance());
+        JCMediaManager.sSurfaceView = new MySurfaceView(getContext());
+        //JCMediaManager.textureView = new JCResizeTextureView(getContext());
+        //JCMediaManager.textureView.setSurfaceTextureListener(JCMediaManager.instance());
     }
 
     public void addTextureView() {

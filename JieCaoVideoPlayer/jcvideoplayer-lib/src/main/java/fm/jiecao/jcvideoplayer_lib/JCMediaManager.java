@@ -21,12 +21,15 @@ import java.util.Map;
  * Created by Nathen
  * On 2015/11/30 15:39
  */
-public class JCMediaManager implements TextureView.SurfaceTextureListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnVideoSizeChangedListener {
+public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnVideoSizeChangedListener {
     public static String TAG = "JieCaoVideoPlayer";
 
     private static JCMediaManager JCMediaManager;
-    public static JCResizeTextureView textureView;
+
+//    public static JCResizeTextureView textureView;
+    public static MySurfaceView sSurfaceView;
     public static SurfaceTexture savedSurfaceTexture;
+
     public MediaPlayer mediaPlayer = new MediaPlayer();
     public static String CURRENT_PLAYING_URL;
     public static boolean CURRENT_PLING_LOOP;

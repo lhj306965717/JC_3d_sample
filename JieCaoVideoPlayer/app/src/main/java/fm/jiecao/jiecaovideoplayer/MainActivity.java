@@ -10,8 +10,6 @@ import android.widget.Button;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.LinkedHashMap;
-
 import fm.jiecao.jcvideoplayer_lib.JCUserAction;
 import fm.jiecao.jcvideoplayer_lib.JCUserActionStandard;
 import fm.jiecao.jcvideoplayer_lib.JCVideoPlayer;
@@ -22,7 +20,6 @@ import fm.jiecao.jiecaovideoplayer.CustomView.MyJCVideoPlayerStandard;
  * Created by Nathen on 16/7/22.
  */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-
 
     MyJCVideoPlayerStandard myJCVideoPlayerStandard;
 
@@ -48,11 +45,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAboutWebView.setOnClickListener(this);
 
         myJCVideoPlayerStandard = (MyJCVideoPlayerStandard) findViewById(R.id.jc_video);
-        myJCVideoPlayerStandard.setUp("http://video.jiecao.fm/11/23/xu/%E5%A6%B9%E5%A6%B9.mp4"
-                , JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "嫂子快长大");
-        Picasso.with(this)
-                .load("http://img4.jiecaojingxuan.com/2016/11/23/1bb2ebbe-140d-4e2e-abd2-9e7e564f71ac.png@!640_360")
-                .into(myJCVideoPlayerStandard.thumbImageView);
+
+        // myJCVideoPlayerStandard.setUp("http://video.jiecao.fm/11/23/xu/%E5%A6%B9%E5%A6%B9.mp4", JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "嫂子快长大");
+
+        myJCVideoPlayerStandard.setUp("http://demo.thinksns.com/ts4/resources/001.mkv", JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "测试视频");
+
+        Picasso.with(this).load("http://img4.jiecaojingxuan.com/2016/11/23/1bb2ebbe-140d-4e2e-abd2-9e7e564f71ac.png@!640_360").into(myJCVideoPlayerStandard.thumbImageView);
 
         JCVideoPlayer.setJcUserAction(new MyUserActionStandard());
     }
