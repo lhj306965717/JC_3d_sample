@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // myJCVideoPlayerStandard.setUp("http://video.jiecao.fm/11/23/xu/%E5%A6%B9%E5%A6%B9.mp4", JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "嫂子快长大");
 
-        myJCVideoPlayerStandard.setUp("http://demo.thinksns.com/ts4/resources/001.mkv", JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "测试视频");
+        myJCVideoPlayerStandard.setUp("http://www.tutu3d.cn/video/Airplanelegend.mp4", JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "测试视频");
 
         Picasso.with(this).load("http://img4.jiecaojingxuan.com/2016/11/23/1bb2ebbe-140d-4e2e-abd2-9e7e564f71ac.png@!640_360").into(myJCVideoPlayerStandard.thumbImageView);
 

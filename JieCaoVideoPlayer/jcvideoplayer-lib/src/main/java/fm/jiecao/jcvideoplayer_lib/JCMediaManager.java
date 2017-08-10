@@ -1,7 +1,6 @@
 package fm.jiecao.jcvideoplayer_lib;
 
 import android.graphics.Point;
-import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Handler;
@@ -10,7 +9,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.Surface;
-import android.view.TextureView;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -26,9 +24,10 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
 
     private static JCMediaManager JCMediaManager;
 
-//    public static JCResizeTextureView textureView;
     public static MySurfaceView sSurfaceView;
-    public static SurfaceTexture savedSurfaceTexture;
+    public static Surface sSurface;
+//    public static JCResizeTextureView textureView;
+//    public static SurfaceTexture savedSurfaceTexture;
 
     public MediaPlayer mediaPlayer = new MediaPlayer();
     public static String CURRENT_PLAYING_URL;
@@ -59,8 +58,10 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
 
     public Point getVideoSize() {
         if (currentVideoWidth != 0 && currentVideoHeight != 0) {
+            Log.e("TAG", "非空");
             return new Point(currentVideoWidth, currentVideoHeight);
         } else {
+            Log.e("TAG", "返回空");
             return null;
         }
     }
@@ -94,7 +95,10 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
                         Method method = clazz.getDeclaredMethod("setDataSource", String.class, Map.class);
                         method.invoke(mediaPlayer, CURRENT_PLAYING_URL, MAP_HEADER_DATA);
                         mediaPlayer.prepareAsync();
-                        mediaPlayer.setSurface(new Surface(savedSurfaceTexture));
+
+                        //mediaPlayer.setSurface(new Surface(savedSurfaceTexture));
+                        mediaPlayer.setSurface(sSurface);
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -117,32 +121,6 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
         Message msg = new Message();
         msg.what = HANDLER_RELEASE;
         mMediaHandler.sendMessage(msg);
-    }
-
-    @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-        Log.i(TAG, "onSurfaceTextureAvailable [" + JCVideoPlayerManager.getCurrentJcvd().hashCode() + "] ");
-        if (savedSurfaceTexture == null) {
-            savedSurfaceTexture = surfaceTexture;
-            prepare();
-        } else {
-            textureView.setSurfaceTexture(savedSurfaceTexture);
-        }
-    }
-
-    @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
-        // 如果SurfaceTexture还没有更新Image，则记录SizeChanged事件，否则忽略
-        Log.i(TAG, "onSurfaceTextureSizeChanged [" + JCVideoPlayerManager.getCurrentJcvd().hashCode() + "] ");
-    }
-
-    @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-        return savedSurfaceTexture == null;
-    }
-
-    @Override
-    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
     }
 
     @Override
@@ -225,5 +203,34 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
             }
         });
     }
+
+
+//    @Override
+//    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+//        Log.i(TAG, "onSurfaceTextureAvailable [" + JCVideoPlayerManager.getCurrentJcvd().hashCode() + "] ");
+//        if (savedSurfaceTexture == null) {
+//            savedSurfaceTexture = surfaceTexture;
+//
+//            prepare(); //重要代码
+//
+//        } else {
+//            textureView.setSurfaceTexture(savedSurfaceTexture);
+//        }
+//    }
+//
+//    @Override
+//    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
+//        // 如果SurfaceTexture还没有更新Image，则记录SizeChanged事件，否则忽略
+//        Log.i(TAG, "onSurfaceTextureSizeChanged [" + JCVideoPlayerManager.getCurrentJcvd().hashCode() + "] ");
+//    }
+//
+//    @Override
+//    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+//        return savedSurfaceTexture == null;
+//    }
+//
+//    @Override
+//    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+//    }
 
 }

@@ -11,7 +11,6 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -66,6 +65,7 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
 
     @Override
     public void init(Context context) {
+
         super.init(context);
 
         batteryTimeLayout = (LinearLayout) findViewById(R.id.battery_time_layout);
