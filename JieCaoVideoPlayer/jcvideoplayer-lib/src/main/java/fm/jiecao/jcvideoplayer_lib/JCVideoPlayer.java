@@ -126,13 +126,28 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 
         View.inflate(context, getLayoutId(), this);
 
+        // 播放按钮
         startButton = (ImageView) findViewById(R.id.start);
+
+        // 全屏显示按钮
         fullscreenButton = (ImageView) findViewById(R.id.fullscreen);
+
+        // 播放进度条
         progressBar = (SeekBar) findViewById(R.id.bottom_seek_progress);
+
+        // 这个是时间显示
         currentTimeTextView = (TextView) findViewById(R.id.current);
+
+        // 当前视频的总播放时间
         totalTimeTextView = (TextView) findViewById(R.id.total);
+
+        // 总的 底部UI 部分
         bottomContainer = (ViewGroup) findViewById(R.id.layout_bottom);
+
+        // 真正用于播放显示的
         textureViewContainer = (ViewGroup) findViewById(R.id.surface_container);
+
+        // 总的顶部UI 部分
         topContainer = (ViewGroup) findViewById(R.id.layout_top);
 
         startButton.setOnClickListener(this);
@@ -865,6 +880,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     //isCurrentJcvd and isCurrenPlayUrl should be two logic methods,isCurrentJcvd is for different jcvd with same
     //url when fullscreen or tiny screen. isCurrenPlayUrl is to find where is myself when back from tiny screen.
     //Sometimes they are overlap.
+    // 判断是否在小屏幕里面
     public boolean isCurrentJcvd() {//虽然看这个函数很不爽，但是干不掉
         return JCVideoPlayerManager.getCurrentJcvd() != null
                 && JCVideoPlayerManager.getCurrentJcvd() == this;

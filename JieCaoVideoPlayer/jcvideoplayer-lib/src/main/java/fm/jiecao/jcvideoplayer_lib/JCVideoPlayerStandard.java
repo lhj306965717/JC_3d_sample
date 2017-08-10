@@ -87,6 +87,11 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
 
     }
 
+    @Override
+    public int getLayoutId() {
+        return R.layout.jc_layout_standard;
+    }
+
     public void setUp(LinkedHashMap urlMap, int defaultUrlMapIndex, int screen, Object... objects) {
         super.setUp(urlMap, defaultUrlMapIndex, screen, objects);
         if (objects.length == 0) return;
@@ -129,11 +134,6 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         lp = loadingProgressBar.getLayoutParams();
         lp.height = size;
         lp.width = size;
-    }
-
-    @Override
-    public int getLayoutId() {
-        return R.layout.jc_layout_standard;
     }
 
     @Override
