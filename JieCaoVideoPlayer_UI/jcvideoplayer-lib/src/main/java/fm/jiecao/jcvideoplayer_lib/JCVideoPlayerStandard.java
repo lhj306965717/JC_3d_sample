@@ -3,14 +3,11 @@ package fm.jiecao.jcvideoplayer_lib;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.graphics.Color;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -19,15 +16,12 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,12 +38,12 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public ProgressBar bottomProgressBar, loadingProgressBar;
     public TextView titleTextView;
     public ImageView thumbImageView;
-    public ImageView tinyBackImageView;
-    public LinearLayout batteryTimeLayout;
-    public ImageView battery_level;
-    public TextView video_current_time;
+    //    public ImageView tinyBackImageView;
+//    public LinearLayout batteryTimeLayout;
+    //    public ImageView battery_level;
+//    public TextView video_current_time;
     public TextView retryTextView;
-    public TextView clarity;
+    //    public TextView clarity;
     public PopupWindow clarityPopWindow;
 
     protected DismissControlViewTimerTask mDismissControlViewTimerTask;
@@ -64,32 +58,46 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     }
 
     @Override
+    public int getLayoutId() {
+        return R.layout.jc_layout_standard;
+    }
+
+    @Override
     public void init(Context context) {
 
         super.init(context);
 
-        batteryTimeLayout = (LinearLayout) findViewById(R.id.battery_time_layout);
+//        batteryTimeLayout = (LinearLayout) findViewById(R.id.battery_time_layout);
+        // 快进快退拖动
         bottomProgressBar = (ProgressBar) findViewById(R.id.bottom_progress);
+        // 标题
         titleTextView = (TextView) findViewById(R.id.title);
+        // 返回
         backButton = (ImageView) findViewById(R.id.back);
+        // 播放器封面
         thumbImageView = (ImageView) findViewById(R.id.thumb);
+        // loading
         loadingProgressBar = (ProgressBar) findViewById(R.id.loading);
-        tinyBackImageView = (ImageView) findViewById(R.id.back_tiny);
-        battery_level = (ImageView) findViewById(R.id.battery_level);
-        video_current_time = (TextView) findViewById(R.id.video_current_time);
+
+        // 用于关闭小窗口图标
+//        tinyBackImageView = (ImageView) findViewById(R.id.back_tiny);
+
+        // 电池图片
+//        battery_level = (ImageView) findViewById(R.id.battery_level);
+
+        // 电池百分比文字
+//        video_current_time = (TextView) findViewById(R.id.video_current_time);
+
+        // 播放错误，重试
         retryTextView = (TextView) findViewById(R.id.retry_text);
-        clarity = (TextView) findViewById(R.id.clarity);
+
+//        clarity = (TextView) findViewById(R.id.clarity);
 
         thumbImageView.setOnClickListener(this);
         backButton.setOnClickListener(this);
-        tinyBackImageView.setOnClickListener(this);
-        clarity.setOnClickListener(this);
+//        tinyBackImageView.setOnClickListener(this);
+//        clarity.setOnClickListener(this);
 
-    }
-
-    @Override
-    public int getLayoutId() {
-        return R.layout.jc_layout_standard;
     }
 
     public void setUp(LinkedHashMap urlMap, int defaultUrlMapIndex, int screen, Object... objects) {
@@ -99,32 +107,31 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         if (currentScreen == SCREEN_WINDOW_FULLSCREEN) {
             fullscreenButton.setImageResource(R.drawable.jc_shrink);
             backButton.setVisibility(View.VISIBLE);
-            tinyBackImageView.setVisibility(View.INVISIBLE);
-            batteryTimeLayout.setVisibility(View.VISIBLE);
-            if (urlMap.size() == 1) {
-                clarity.setVisibility(GONE);
-            } else {
-                clarity.setText(JCUtils.getKeyFromLinkedMap(urlMap, currentUrlMapIndex));
-                clarity.setVisibility(View.VISIBLE);
-            }
+//            tinyBackImageView.setVisibility(View.INVISIBLE);
+//            batteryTimeLayout.setVisibility(View.VISIBLE);
+//            if (urlMap.size() == 1) {
+//                clarity.setVisibility(GONE);
+//            } else {
+//                clarity.setText(JCUtils.getKeyFromLinkedMap(urlMap, currentUrlMapIndex));
+//                clarity.setVisibility(View.VISIBLE);
+//            }
             changeStartButtonSize((int) getResources().getDimension(R.dimen.jc_start_button_w_h_fullscreen));
         } else if (currentScreen == SCREEN_LAYOUT_NORMAL
                 || currentScreen == SCREEN_LAYOUT_LIST) {
             fullscreenButton.setImageResource(R.drawable.jc_enlarge);
             backButton.setVisibility(View.GONE);
-            tinyBackImageView.setVisibility(View.INVISIBLE);
+//            tinyBackImageView.setVisibility(View.INVISIBLE);
             changeStartButtonSize((int) getResources().getDimension(R.dimen.jc_start_button_w_h_normal));
-            batteryTimeLayout.setVisibility(View.GONE);
-            clarity.setVisibility(View.GONE);
+//            batteryTimeLayout.setVisibility(View.GONE);
+//            clarity.setVisibility(View.GONE);
         } else if (currentScreen == SCREEN_WINDOW_TINY) {
-            tinyBackImageView.setVisibility(View.VISIBLE);
+//            tinyBackImageView.setVisibility(View.VISIBLE);
             setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE,
                     View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-            batteryTimeLayout.setVisibility(View.GONE);
-            clarity.setVisibility(View.GONE);
+//            batteryTimeLayout.setVisibility(View.GONE);
+//            clarity.setVisibility(View.GONE);
         }
-        setSystemTimeAndBattery();
-
+//        setSystemTimeAndBattery();
     }
 
     public void changeStartButtonSize(int size) {
@@ -200,6 +207,7 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
                 case MotionEvent.ACTION_MOVE:
                     break;
                 case MotionEvent.ACTION_UP:
+                    Log.e("TAG", "surface_container被电击");
                     startDismissControlViewTimer();
                     if (mChangePosition) {
                         int duration = getDuration();
@@ -212,7 +220,7 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
                     }
                     break;
             }
-        } else if (id == R.id.bottom_seek_progress) {
+        } else if (id == R.id.bottom_seek_progress) { // SeekBar事件
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     cancelDismissControlViewTimer();
@@ -250,48 +258,6 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
             startDismissControlViewTimer();
         } else if (i == R.id.back) {
             backPress();
-        } else if (i == R.id.back_tiny) {
-            backPress();
-        } else if (i == R.id.clarity) {
-            LayoutInflater inflater = (LayoutInflater) getContext()
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            final LinearLayout layout = (LinearLayout) inflater.inflate(R.layout.jc_layout_clarity, null);
-
-            OnClickListener mQualityListener = new OnClickListener() {
-                public void onClick(View v) {
-                    int index = (int) v.getTag();
-                    onStatePreparingChangingUrl(index, getCurrentPositionWhenPlaying());
-                    clarity.setText(JCUtils.getKeyFromLinkedMap(urlMap, currentUrlMapIndex));
-                    for (int j = 0; j < layout.getChildCount(); j++) {//设置点击之后的颜色
-                        if (j == currentUrlMapIndex) {
-                            ((TextView) layout.getChildAt(j)).setTextColor(Color.parseColor("#fff85959"));
-                        } else {
-                            ((TextView) layout.getChildAt(j)).setTextColor(Color.parseColor("#ffffff"));
-                        }
-                    }
-                    if (clarityPopWindow != null) {
-                        clarityPopWindow.dismiss();
-                    }
-                }
-            };
-
-            for (int j = 0; j < urlMap.size(); j++) {
-                String key = JCUtils.getKeyFromLinkedMap(urlMap, j);
-                TextView clarityItem = (TextView) View.inflate(getContext(), R.layout.jc_layout_clarity_item, null);
-                clarityItem.setText(key);
-                clarityItem.setTag(j);
-                layout.addView(clarityItem, j);
-                clarityItem.setOnClickListener(mQualityListener);
-                if (j == currentUrlMapIndex) {
-                    clarityItem.setTextColor(Color.parseColor("#fff85959"));
-                }
-            }
-
-            clarityPopWindow = new PopupWindow(layout, LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, true);
-            clarityPopWindow.setContentView(layout);
-            clarityPopWindow.showAsDropDown(clarity);
-            layout.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-            clarityPopWindow.update(clarity, -40, 46, Math.round(layout.getMeasuredWidth() * 2), layout.getMeasuredHeight());
         }
     }
 
@@ -346,16 +312,16 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     }
 
     public void onClickUiToggle() {
-        if (bottomContainer.getVisibility() != View.VISIBLE) {
-            setSystemTimeAndBattery();
-            clarity.setText(JCUtils.getKeyFromLinkedMap(urlMap, currentUrlMapIndex));
-        }
+//        if (bottomContainer.getVisibility() != View.VISIBLE) {
+//            setSystemTimeAndBattery();
+//            clarity.setText(JCUtils.getKeyFromLinkedMap(urlMap, currentUrlMapIndex));
+//        }
         if (currentState == CURRENT_STATE_PREPARING) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
                 changeUiToPreparingClear();
             } else {
                 changeUiToPreparingShow();
-                setSystemTimeAndBattery();
+//                setSystemTimeAndBattery();
             }
         } else if (currentState == CURRENT_STATE_PLAYING) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
@@ -378,45 +344,48 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         }
     }
 
-    public void setSystemTimeAndBattery() {
-        SimpleDateFormat dateFormater = new SimpleDateFormat("HH:mm");
-        Date date = new Date();
-        video_current_time.setText(dateFormater.format(date));
-        if (!brocasting) {
-            getContext().registerReceiver(
-                    battertReceiver,
-                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-            );
-        }
-    }
+//    /**
+//     * 设置时间
+//     */
+//    public void setSystemTimeAndBattery() {
+//        SimpleDateFormat dateFormater = new SimpleDateFormat("HH:mm");
+//        Date date = new Date();
+//        video_current_time.setText(dateFormater.format(date));
+//        if (!brocasting) {
+//            getContext().registerReceiver(
+//                    battertReceiver,
+//                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+//            );
+//        }
+//    }
 
-    private boolean brocasting = false;
+//    private boolean brocasting = false;
 
-    private BroadcastReceiver battertReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
-                int level = intent.getIntExtra("level", 0);
-                int scale = intent.getIntExtra("scale", 100);
-                int percent = level * 100 / scale;
-                if (percent < 15) {
-                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_10);
-                } else if (percent >= 15 && percent < 40) {
-                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_30);
-                } else if (percent >= 40 && percent < 60) {
-                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_50);
-                } else if (percent >= 60 && percent < 80) {
-                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_70);
-                } else if (percent >= 80 && percent < 95) {
-                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_90);
-                } else if (percent >= 95 && percent <= 100) {
-                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_100);
-                }
-                getContext().unregisterReceiver(battertReceiver);
-                brocasting = false;
-            }
-        }
-    };
+//    private BroadcastReceiver battertReceiver = new BroadcastReceiver() {
+//        public void onReceive(Context context, Intent intent) {
+//            String action = intent.getAction();
+//            if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
+//                int level = intent.getIntExtra("level", 0);
+//                int scale = intent.getIntExtra("scale", 100);
+//                int percent = level * 100 / scale;
+//                if (percent < 15) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_10);
+//                } else if (percent >= 15 && percent < 40) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_30);
+//                } else if (percent >= 40 && percent < 60) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_50);
+//                } else if (percent >= 60 && percent < 80) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_70);
+//                } else if (percent >= 80 && percent < 95) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_90);
+//                } else if (percent >= 95 && percent <= 100) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_100);
+//                }
+//                getContext().unregisterReceiver(battertReceiver);
+//                brocasting = false;
+//            }
+//        }
+//    };
 
     public void onCLickUiToggleToClear() {
         if (currentState == CURRENT_STATE_PREPARING) {
@@ -854,6 +823,9 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         return dialog;
     }
 
+    /**
+     * 启动时间显示
+     */
     public void startDismissControlViewTimer() {
         cancelDismissControlViewTimer();
         DISMISS_CONTROL_VIEW_TIMER = new Timer();
@@ -861,6 +833,9 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         DISMISS_CONTROL_VIEW_TIMER.schedule(mDismissControlViewTimerTask, 2500);
     }
 
+    /**
+     * 取消时间显示
+     */
     public void cancelDismissControlViewTimer() {
         if (DISMISS_CONTROL_VIEW_TIMER != null) {
             DISMISS_CONTROL_VIEW_TIMER.cancel();
@@ -868,7 +843,6 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         if (mDismissControlViewTimerTask != null) {
             mDismissControlViewTimerTask.cancel();
         }
-
     }
 
     public class DismissControlViewTimerTask extends TimerTask {

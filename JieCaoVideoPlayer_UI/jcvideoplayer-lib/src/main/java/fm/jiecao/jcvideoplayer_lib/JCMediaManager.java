@@ -7,7 +7,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.view.Surface;
 
 import java.lang.reflect.Method;
@@ -19,18 +18,16 @@ import java.util.Map;
  * Created by Nathen
  * On 2015/11/30 15:39
  */
-public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnVideoSizeChangedListener {
+public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnVideoSizeChangedListener {
     public static String TAG = "JieCaoVideoPlayer";
 
     private static JCMediaManager JCMediaManager;
 
     public static MySurfaceView sSurfaceView;
     public static Surface sSurface;
-//    public static JCResizeTextureView textureView;
-//    public static SurfaceTexture savedSurfaceTexture;
 
-    public MediaPlayer mediaPlayer = new MediaPlayer();
-    public static String CURRENT_PLAYING_URL;
+    public MediaPlayer mediaPlayer;
+    public static String CURRENT_PLAYING_URL; // 播放地址
     public static boolean CURRENT_PLING_LOOP;
     public static Map<String, String> MAP_HEADER_DATA;
     public int currentVideoWidth = 0;
@@ -38,6 +35,8 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
 
     public static final int HANDLER_PREPARE = 0;
     public static final int HANDLER_RELEASE = 2;
+    public boolean isNetworkResource = true; //是否是网络资源
+
     HandlerThread mMediaHandlerThread;
     MediaHandler mMediaHandler;
     Handler mainThreadHandler;
@@ -58,10 +57,8 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
 
     public Point getVideoSize() {
         if (currentVideoWidth != 0 && currentVideoHeight != 0) {
-            Log.e("TAG", "非空");
             return new Point(currentVideoWidth, currentVideoHeight);
         } else {
-            Log.e("TAG", "返回空");
             return null;
         }
     }
@@ -79,37 +76,59 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
                     try {
                         currentVideoWidth = 0;
                         currentVideoHeight = 0;
-                        mediaPlayer.release();
+                        if (mediaPlayer != null) {
+                            mediaPlayer.release();
+                        }
                         mediaPlayer = new MediaPlayer();
                         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                        mediaPlayer.setLooping(CURRENT_PLING_LOOP);
-                        mediaPlayer.setOnPreparedListener(JCMediaManager.this);
-                        mediaPlayer.setOnCompletionListener(JCMediaManager.this);
-                        mediaPlayer.setOnBufferingUpdateListener(JCMediaManager.this);
-                        mediaPlayer.setScreenOnWhilePlaying(true);
-                        mediaPlayer.setOnSeekCompleteListener(JCMediaManager.this);
-                        mediaPlayer.setOnErrorListener(JCMediaManager.this);
-                        mediaPlayer.setOnInfoListener(JCMediaManager.this);
-                        mediaPlayer.setOnVideoSizeChangedListener(JCMediaManager.this);
-                        Class<MediaPlayer> clazz = MediaPlayer.class;
-                        Method method = clazz.getDeclaredMethod("setDataSource", String.class, Map.class);
-                        method.invoke(mediaPlayer, CURRENT_PLAYING_URL, MAP_HEADER_DATA);
-                        mediaPlayer.prepareAsync();
-
-                        //mediaPlayer.setSurface(new Surface(savedSurfaceTexture));
                         mediaPlayer.setSurface(sSurface);
+                        // 是否循环播放
+                        mediaPlayer.setLooping(CURRENT_PLING_LOOP);
+                        // 是否使用SurfaceHolder来显示
+                        mediaPlayer.setScreenOnWhilePlaying(false);
+                        // 视频资源加载回调监听
+                        mediaPlayer.setOnPreparedListener(JCMediaManager.this);
+                        // 播放完成监听
+                        mediaPlayer.setOnCompletionListener(JCMediaManager.this);
+                        // 缓冲更新监听
+                        mediaPlayer.setOnBufferingUpdateListener(JCMediaManager.this);
+                        // seekto定位监听
+                        mediaPlayer.setOnSeekCompleteListener(JCMediaManager.this);
+                        // 播放错误监听
+                        mediaPlayer.setOnErrorListener(JCMediaManager.this);
+                        // 指示信息和警告信息监听
+                        mediaPlayer.setOnInfoListener(JCMediaManager.this);
+                        // 视频大小变化监听
+                        mediaPlayer.setOnVideoSizeChangedListener(JCMediaManager.this);
+
+                        if (isNetworkResource) {
+                            // 这里为什么要用反射，这个方法本来就是公开的
+                            // 应该是通过反射直接去加载网络资源
+                            Class<MediaPlayer> clazz = MediaPlayer.class;
+                            Method method = clazz.getDeclaredMethod("setDataSource", String.class, Map.class);
+                            method.invoke(mediaPlayer, CURRENT_PLAYING_URL, MAP_HEADER_DATA);
+                        } else {
+                            mediaPlayer.setDataSource(CURRENT_PLAYING_URL); // 播放本地资源
+                        }
+
+                        mediaPlayer.prepareAsync();
 
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
                 case HANDLER_RELEASE:
-                    mediaPlayer.release();
+                    if (mediaPlayer != null) {
+                        mediaPlayer.release();
+                    }
                     break;
             }
         }
     }
 
+    /**
+     * 创建 MediaPlayer ，并异步准备
+     */
     public void prepare() {
         releaseMediaPlayer();
         Message msg = new Message();
@@ -117,17 +136,30 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
         mMediaHandler.sendMessage(msg);
     }
 
+    /**
+     * 释放资源
+     */
     public void releaseMediaPlayer() {
         Message msg = new Message();
         msg.what = HANDLER_RELEASE;
         mMediaHandler.sendMessage(msg);
     }
 
+    /**
+     * 多媒体资源加载准备完成回调
+     *
+     * @param mp
+     */
     @Override
     public void onPrepared(MediaPlayer mp) {
         mediaPlayer.start();
     }
 
+    /**
+     * 播放完成回调
+     *
+     * @param mp
+     */
     @Override
     public void onCompletion(MediaPlayer mp) {
         mainThreadHandler.post(new Runnable() {
@@ -140,6 +172,12 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
         });
     }
 
+    /**
+     * 多媒体资源缓冲更新回调
+     *
+     * @param mp
+     * @param percent
+     */
     @Override
     public void onBufferingUpdate(MediaPlayer mp, final int percent) {
         mainThreadHandler.post(new Runnable() {
@@ -152,6 +190,15 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
         });
     }
 
+    /**
+     * Seekto定位回调
+     *
+     * @param mp 注意：
+     *           seekTo()是定位方法，可以让播放器从指定的位置开始播放，
+     *           需要注意的是该方法是个异步方法，也就是说该方法返回时并不意味着定位完成，
+     *           尤其是播放的网络文件，真正定位完成时会触发OnSeekComplete.onSeekComplete()，
+     *           如果需要是可以调用setOnSeekCompleteListener(OnSeekCompleteListener)设置监听器来处理的
+     */
     @Override
     public void onSeekComplete(MediaPlayer mp) {
         mainThreadHandler.post(new Runnable() {
@@ -164,6 +211,14 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
         });
     }
 
+    /**
+     * 播放器错误回调
+     *
+     * @param mp
+     * @param what
+     * @param extra
+     * @return
+     */
     @Override
     public boolean onError(MediaPlayer mp, final int what, final int extra) {
         mainThreadHandler.post(new Runnable() {
@@ -177,6 +232,14 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
         return true;
     }
 
+    /**
+     * 播放器警告信息回调
+     *
+     * @param mp
+     * @param what
+     * @param extra
+     * @return
+     */
     @Override
     public boolean onInfo(MediaPlayer mp, final int what, final int extra) {
         mainThreadHandler.post(new Runnable() {
@@ -190,6 +253,13 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
         return false;
     }
 
+    /**
+     * 加载到视频资源大小回调
+     *
+     * @param mp
+     * @param width
+     * @param height
+     */
     @Override
     public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
         currentVideoWidth = width;
@@ -203,34 +273,4 @@ public class JCMediaManager implements /*TextureView.SurfaceTextureListener,*/ M
             }
         });
     }
-
-
-//    @Override
-//    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-//        Log.i(TAG, "onSurfaceTextureAvailable [" + JCVideoPlayerManager.getCurrentJcvd().hashCode() + "] ");
-//        if (savedSurfaceTexture == null) {
-//            savedSurfaceTexture = surfaceTexture;
-//
-//            prepare(); //重要代码
-//
-//        } else {
-//            textureView.setSurfaceTexture(savedSurfaceTexture);
-//        }
-//    }
-//
-//    @Override
-//    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
-//        // 如果SurfaceTexture还没有更新Image，则记录SizeChanged事件，否则忽略
-//        Log.i(TAG, "onSurfaceTextureSizeChanged [" + JCVideoPlayerManager.getCurrentJcvd().hashCode() + "] ");
-//    }
-//
-//    @Override
-//    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-//        return savedSurfaceTexture == null;
-//    }
-//
-//    @Override
-//    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
-//    }
-
 }

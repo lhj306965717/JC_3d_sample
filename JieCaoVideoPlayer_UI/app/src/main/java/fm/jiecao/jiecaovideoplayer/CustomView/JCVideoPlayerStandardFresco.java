@@ -36,11 +36,11 @@ public class JCVideoPlayerStandardFresco extends JCVideoPlayerStandard {
         backButton = (ImageView) findViewById(R.id.back);
 //        thumbImageView = (SimpleDraweeView) findViewById(R.id.thumb);
         loadingProgressBar = (ProgressBar) findViewById(R.id.loading);
-        tinyBackImageView = (ImageView) findViewById(R.id.back_tiny);
+//        tinyBackImageView = (ImageView) findViewById(R.id.back_tiny);
 
 //        thumbImageView.setOnClickListener(this);
         backButton.setOnClickListener(this);
-        tinyBackImageView.setOnClickListener(this);
+//        tinyBackImageView.setOnClickListener(this);
 
     }
 
@@ -52,13 +52,13 @@ public class JCVideoPlayerStandardFresco extends JCVideoPlayerStandard {
         if (currentScreen == SCREEN_WINDOW_FULLSCREEN) {
             fullscreenButton.setImageResource(R.drawable.jc_shrink);
             backButton.setVisibility(View.VISIBLE);
-            tinyBackImageView.setVisibility(View.INVISIBLE);
+//            tinyBackImageView.setVisibility(View.INVISIBLE);
         } else if (currentScreen == SCREEN_LAYOUT_LIST) {
             fullscreenButton.setImageResource(R.drawable.jc_enlarge);
             backButton.setVisibility(View.GONE);
-            tinyBackImageView.setVisibility(View.INVISIBLE);
+//            tinyBackImageView.setVisibility(View.INVISIBLE);
         } else if (currentScreen == SCREEN_WINDOW_TINY) {
-            tinyBackImageView.setVisibility(View.VISIBLE);
+//            tinyBackImageView.setVisibility(View.VISIBLE);
             setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE,
                     View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
         }
