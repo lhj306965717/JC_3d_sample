@@ -93,8 +93,14 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
 
 //        clarity = (TextView) findViewById(R.id.clarity);
 
-        thumbImageView.setOnClickListener(this);
+        // 暂时注销 封面的的点击事件
+//        thumbImageView.setOnClickListener(this);
+        thumbImageView.setVisibility(View.INVISIBLE);
+
+
         backButton.setOnClickListener(this);
+
+
 //        tinyBackImageView.setOnClickListener(this);
 //        clarity.setOnClickListener(this);
 
@@ -200,21 +206,21 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         int id = v.getId();
-        if (id == R.id.surface_container) {
+        if (id == R.id.fl_container) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     break;
                 case MotionEvent.ACTION_MOVE:
                     break;
                 case MotionEvent.ACTION_UP:
-                    Log.e("TAG", "surface_container被电击");
-                    startDismissControlViewTimer();
+                  //  startDismissControlViewTimer();
                     if (mChangePosition) {
                         int duration = getDuration();
                         int progress = mSeekTimePosition * 100 / (duration == 0 ? 1 : duration);
                         bottomProgressBar.setProgress(progress);
                     }
                     if (!mChangePosition && !mChangeVolume) {
+                        Log.e("TAG", "mChangePosition "+mChangePosition +"   mChangeVolume: "+mChangeVolume);
                         onEvent(JCUserActionStandard.ON_CLICK_BLANK);
                         onClickUiToggle();
                     }
@@ -249,12 +255,15 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
                     showWifiDialog(JCUserActionStandard.ON_CLICK_START_THUMB);
                     return;
                 }
+
                 onEvent(JCUserActionStandard.ON_CLICK_START_THUMB);
+
                 startVideo();
+
             } else if (currentState == CURRENT_STATE_AUTO_COMPLETE) {
                 onClickUiToggle();
             }
-        } else if (i == R.id.surface_container) {
+        } else if (i == R.id.fl_container) {
             startDismissControlViewTimer();
         } else if (i == R.id.back) {
             backPress();
@@ -312,16 +321,11 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     }
 
     public void onClickUiToggle() {
-//        if (bottomContainer.getVisibility() != View.VISIBLE) {
-//            setSystemTimeAndBattery();
-//            clarity.setText(JCUtils.getKeyFromLinkedMap(urlMap, currentUrlMapIndex));
-//        }
         if (currentState == CURRENT_STATE_PREPARING) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
                 changeUiToPreparingClear();
             } else {
                 changeUiToPreparingShow();
-//                setSystemTimeAndBattery();
             }
         } else if (currentState == CURRENT_STATE_PLAYING) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
@@ -343,49 +347,6 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
             }
         }
     }
-
-//    /**
-//     * 设置时间
-//     */
-//    public void setSystemTimeAndBattery() {
-//        SimpleDateFormat dateFormater = new SimpleDateFormat("HH:mm");
-//        Date date = new Date();
-//        video_current_time.setText(dateFormater.format(date));
-//        if (!brocasting) {
-//            getContext().registerReceiver(
-//                    battertReceiver,
-//                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-//            );
-//        }
-//    }
-
-//    private boolean brocasting = false;
-
-//    private BroadcastReceiver battertReceiver = new BroadcastReceiver() {
-//        public void onReceive(Context context, Intent intent) {
-//            String action = intent.getAction();
-//            if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
-//                int level = intent.getIntExtra("level", 0);
-//                int scale = intent.getIntExtra("scale", 100);
-//                int percent = level * 100 / scale;
-//                if (percent < 15) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_10);
-//                } else if (percent >= 15 && percent < 40) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_30);
-//                } else if (percent >= 40 && percent < 60) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_50);
-//                } else if (percent >= 60 && percent < 80) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_70);
-//                } else if (percent >= 80 && percent < 95) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_90);
-//                } else if (percent >= 95 && percent <= 100) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_100);
-//                }
-//                getContext().unregisterReceiver(battertReceiver);
-//                brocasting = false;
-//            }
-//        }
-//    };
 
     public void onCLickUiToggleToClear() {
         if (currentState == CURRENT_STATE_PREPARING) {
@@ -435,12 +396,15 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         bottomProgressBar.setSecondaryProgress(0);
     }
 
+    /**
+     * 注意初始化会调用这个方法
+     */
     //Unified management Ui
     public void changeUiToNormal() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
             case SCREEN_LAYOUT_LIST:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.VISIBLE,
+                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.VISIBLE,
                         View.INVISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
@@ -663,17 +627,23 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
 
     public void setAllControlsVisible(int topCon, int bottomCon, int startBtn, int loadingPro,
                                       int thumbImg, int coverImg, int bottomPro) {
+
+        // TODO 这里是重点代码
         //TODO 这个地方由于前边的各种状态不是太明白，所以暂时只能这样写一下（目前没发现问题），作者可以优化一下
         if (!isVideoRendingStart && currentScreen != SCREEN_WINDOW_FULLSCREEN && currentScreen != SCREEN_WINDOW_TINY) {
             //只要没开始播放，一直显示缩略图
             thumbImg = VISIBLE;
+            Log.e("TAG", "thumbImg++++VISIBLE");
         }
+
+
+        Log.e("TAG", "bottomContainer状态："+bottomCon);
 
         topContainer.setVisibility(topCon);
         bottomContainer.setVisibility(bottomCon);
         startButton.setVisibility(startBtn);
         loadingProgressBar.setVisibility(loadingPro);
-        thumbImageView.setVisibility(thumbImg);
+      //  thumbImageView.setVisibility(thumbImg);
         bottomProgressBar.setVisibility(bottomPro);
     }
 
@@ -816,7 +786,7 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         window.addFlags(Window.FEATURE_ACTION_BAR);
         window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
         window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-        window.setLayout(-2, -2);
+        window.setLayout(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT);
         WindowManager.LayoutParams localLayoutParams = window.getAttributes();
         localLayoutParams.gravity = Gravity.CENTER;
         window.setAttributes(localLayoutParams);
@@ -830,7 +800,7 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         cancelDismissControlViewTimer();
         DISMISS_CONTROL_VIEW_TIMER = new Timer();
         mDismissControlViewTimerTask = new DismissControlViewTimerTask();
-        DISMISS_CONTROL_VIEW_TIMER.schedule(mDismissControlViewTimerTask, 2500);
+        DISMISS_CONTROL_VIEW_TIMER.schedule(mDismissControlViewTimerTask, 3000); // 表示执行的时间
     }
 
     /**
@@ -852,14 +822,17 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
             if (currentState != CURRENT_STATE_NORMAL
                     && currentState != CURRENT_STATE_ERROR
                     && currentState != CURRENT_STATE_AUTO_COMPLETE) {
-                if (getContext() != null && getContext() instanceof Activity) {
-                    ((Activity) getContext()).runOnUiThread(new Runnable() {
+
+                Context context = getContext();
+
+                if (context != null && context instanceof Activity) {
+                    ((Activity) context).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             bottomContainer.setVisibility(View.INVISIBLE);
                             topContainer.setVisibility(View.INVISIBLE);
                             startButton.setVisibility(View.INVISIBLE);
-                            if (clarityPopWindow != null) {
+                            if (clarityPopWindow != null && clarityPopWindow.isShowing()) {
                                 clarityPopWindow.dismiss();
                             }
                             if (currentScreen != SCREEN_WINDOW_TINY) {
@@ -886,4 +859,48 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
             clarityPopWindow.dismiss();
         }
     }
+
+
+//    /**
+//     * 设置时间
+//     */
+//    public void setSystemTimeAndBattery() {
+//        SimpleDateFormat dateFormater = new SimpleDateFormat("HH:mm");
+//        Date date = new Date();
+//        video_current_time.setText(dateFormater.format(date));
+//        if (!brocasting) {
+//            getContext().registerReceiver(
+//                    battertReceiver,
+//                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+//            );
+//        }
+//    }
+
+//    private boolean brocasting = false;
+
+//    private BroadcastReceiver battertReceiver = new BroadcastReceiver() {
+//        public void onReceive(Context context, Intent intent) {
+//            String action = intent.getAction();
+//            if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
+//                int level = intent.getIntExtra("level", 0);
+//                int scale = intent.getIntExtra("scale", 100);
+//                int percent = level * 100 / scale;
+//                if (percent < 15) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_10);
+//                } else if (percent >= 15 && percent < 40) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_30);
+//                } else if (percent >= 40 && percent < 60) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_50);
+//                } else if (percent >= 60 && percent < 80) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_70);
+//                } else if (percent >= 80 && percent < 95) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_90);
+//                } else if (percent >= 95 && percent <= 100) {
+//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_100);
+//                }
+//                getContext().unregisterReceiver(battertReceiver);
+//                brocasting = false;
+//            }
+//        }
+//    };
 }

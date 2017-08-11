@@ -226,7 +226,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     @Override
     public void onClick(View v) {
         int i = v.getId();
-        if (i == R.id.start) {
+        if (i == R.id.iv_start) {
             Log.i(TAG, "onClick start [" + this.hashCode() + "] ");
             if (TextUtils.isEmpty(JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex))) {
                 Toast.makeText(getContext(), getResources().getString(R.string.no_url), Toast.LENGTH_SHORT).show();
@@ -265,22 +265,18 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                 onEvent(JCUserAction.ON_ENTER_FULLSCREEN);
                 startWindowFullscreen();
             }
-        } else if (i == R.id.surface_container && currentState == CURRENT_STATE_ERROR) {
+        } else if (i == R.id.fl_container && currentState == CURRENT_STATE_ERROR) {
             Log.i(TAG, "onClick surfaceContainer State=Error [" + this.hashCode() + "] ");
             startVideo();
-        }else
-            Log.e(TAG, "其他事件");
+        }
     }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-
-        Log.e(TAG, TAG+"   onTouch  ");
-
         float x = event.getX();
         float y = event.getY();
         int id = v.getId();
-        if (id == R.id.surface_container) {
+        if (id == R.id.fl_container) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     Log.i(TAG, "onTouch surfaceContainer actionDown [" + this.hashCode() + "] ");
@@ -288,9 +284,12 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 
                     mDownX = x;
                     mDownY = y;
+
+                    // 这三个控制下面面move中代码执行
                     mChangeVolume = false;
                     mChangePosition = false;
                     mChangeBrightness = false;
+
                     break;
                 case MotionEvent.ACTION_MOVE:
                     Log.i(TAG, "onTouch surfaceContainer actionMove [" + this.hashCode() + "] ");
@@ -298,7 +297,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                     float deltaY = y - mDownY;
                     float absDeltaX = Math.abs(deltaX);
                     float absDeltaY = Math.abs(deltaY);
-                    if (currentScreen == SCREEN_WINDOW_FULLSCREEN) {
+                    if (currentScreen == SCREEN_WINDOW_FULLSCREEN) { // 不是全屏模式下，上下滑动没有事件响应
                         if (!mChangePosition && !mChangeVolume && !mChangeBrightness) {
                             if (absDeltaX > THRESHOLD || absDeltaY > THRESHOLD) {
                                 cancelProgressTimer();
@@ -352,7 +351,6 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                         int volumePercent = (int) (mGestureDownVolume * 100 / max + deltaY * 3 * 100 / mScreenHeight);
                         showVolumeDialog(-deltaY, volumePercent);
                     }
-
                     if (mChangeBrightness) {
                         deltaY = -deltaY;
                         int deltaV = (int) (255 * deltaY * 3 / mScreenHeight);
@@ -621,13 +619,16 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     public void onCompletion() {
         Log.i(TAG, "onCompletion " + " [" + this.hashCode() + "] ");
         //save position
+        // 如果是播放状态或者暂停状态被执行了清理后者释放，则保存播放进度
         if (currentState == CURRENT_STATE_PLAYING || currentState == CURRENT_STATE_PAUSE) {
             int position = getCurrentPositionWhenPlaying();
-//            int duration = getDuration();
             JCUtils.saveProgress(getContext(), JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex), position);
         }
+
         cancelProgressTimer();
+
         onStateNormal();
+
         // 清理缓存变量
         surfaceViewContainer.removeView(JCMediaManager.sSurfaceView);
 
@@ -637,15 +638,17 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
         AudioManager mAudioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         mAudioManager.abandonAudioFocus(onAudioFocusChangeListener);
 
+        // 用于防止屏幕熄灭
         JCUtils.scanForActivity(getContext()).getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         clearFullscreenLayout();
 
+        // 强制设置屏幕旋转方向为垂直
         JCUtils.getAppCompActivity(getContext()).setRequestedOrientation(NORMAL_ORIENTATION);
 
         JCMediaManager.sSurfaceView = null;
         JCMediaManager.sSurface = null;
-        isVideoRendingStart = false;
+        isVideoRendingStart = false; // 是否开始渲染标记
     }
 
     public void release() {
@@ -801,6 +804,11 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
         totalTimeTextView.setText(JCUtils.stringForTime(0));
     }
 
+    /**
+     * 返回seekbar的进度
+     *
+     * @return
+     */
     public int getCurrentPositionWhenPlaying() {
         int position = 0;
         if (JCMediaManager.instance().mediaPlayer == null)
