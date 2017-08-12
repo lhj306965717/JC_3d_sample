@@ -46,8 +46,8 @@ public class WebViewActivity extends AppCompatActivity {
                 public void run() {
                     if (index == 0) {
                         JCVideoPlayerStandard webVieo = new JCVideoPlayerStandard(WebViewActivity.this);
-                        webVieo.setUp("http://video.jiecao.fm/11/16/c/68Tlrc9zNi3JomXpd-nUog__.mp4",
-                                JCVideoPlayer.SCREEN_LAYOUT_LIST, "嫂子骑大马");
+//                        webVieo.setUp("http://video.jiecao.fm/11/16/c/68Tlrc9zNi3JomXpd-nUog__.mp4",
+//                                JCVideoPlayer.SCREEN_LAYOUT_LIST, "嫂子骑大马");
                         Picasso.with(WebViewActivity.this)
                                 .load("http://img4.jiecaojingxuan.com/2016/11/16/1d935cc5-a1e7-4779-bdfa-20fd7a60724c.jpg@!640_360")
                                 .into(webVieo.thumbImageView);
@@ -60,8 +60,8 @@ public class WebViewActivity extends AppCompatActivity {
                         mWebView.addView(webVieo, layoutParams);
                     } else {
                         JCVideoPlayerStandard webVieo = new JCVideoPlayerStandard(WebViewActivity.this);
-                        webVieo.setUp("http://video.jiecao.fm/11/14/xin/%E5%90%B8%E6%AF%92.mp4",
-                                JCVideoPlayer.SCREEN_LAYOUT_LIST, "嫂子失态了");
+//                        webVieo.setUp("http://video.jiecao.fm/11/14/xin/%E5%90%B8%E6%AF%92.mp4",
+//                                JCVideoPlayer.SCREEN_LAYOUT_LIST, "嫂子失态了");
                         Picasso.with(WebViewActivity.this)
                                 .load("http://img4.jiecaojingxuan.com/2016/11/14/a019ffc1-556c-4a85-b70c-b1b49811d577.jpg@!640_360")
                                 .into(webVieo.thumbImageView);

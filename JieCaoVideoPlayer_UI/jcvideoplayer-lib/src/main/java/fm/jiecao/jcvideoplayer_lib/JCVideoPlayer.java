@@ -1,5 +1,6 @@
 package fm.jiecao.jcvideoplayer_lib;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.hardware.Sensor;
@@ -67,9 +68,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     public static long CLICK_QUIT_FULLSCREEN_TIME = 0;
 
     public static final int SCREEN_LAYOUT_NORMAL = 0; // 正常状态
-    public static final int SCREEN_LAYOUT_LIST = 1;  // List 列表状态
     public static final int SCREEN_WINDOW_FULLSCREEN = 2; // 全屏状态
-    public static final int SCREEN_WINDOW_TINY = 3;  // 小窗口状态
 
     public static final int CURRENT_STATE_NORMAL = 0;  // 正常状态(无状态)
     public static final int CURRENT_STATE_PREPARING = 1;  // 准备状态
@@ -86,11 +85,13 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 
     public static final String URL_KEY_DEFAULT = "URL_KEY_DEFAULT";
 
+    /*******************  上面的很多状态都是使用静态是因为全屏窗口与普通窗口之间数据共享，达到无缝切换全屏   *******************/
+
     LinkedHashMap urlMap;
     int currentUrlMapIndex = 0;
 
-    public int currentState = -1;
     public int currentScreen = -1;  // 初始化 设置的 播放器显示模式
+    public int currentState = -1;
     public boolean loop = false;
     public Map<String, String> headData;
 
@@ -209,17 +210,20 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
      * @param objects
      */
     public void setUp(LinkedHashMap urlMap, int defaultUrlMapIndex, int screen, Object... objects) {
-        if (this.urlMap != null && !TextUtils.isEmpty(JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex)) &&
-                TextUtils.equals(JCUtils.getCurrentUrlFromMap(this.urlMap, currentUrlMapIndex),
-                        JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex))) {
+        if (this.urlMap != null &&
+                !TextUtils.isEmpty(JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex)) &&
+                TextUtils.equals(JCUtils.getCurrentUrlFromMap(this.urlMap, currentUrlMapIndex), JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex))) {
             return;
         }
+
         this.urlMap = urlMap;
         this.currentUrlMapIndex = defaultUrlMapIndex;
         this.currentScreen = screen;
         this.objects = objects;
         this.headData = null;
-        isVideoRendingStart = false;
+
+        isVideoRendingStart = false; //设置渲染标记
+
         onStateNormal();
     }
 
@@ -233,14 +237,21 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                 return;
             }
             if (currentState == CURRENT_STATE_NORMAL || currentState == CURRENT_STATE_ERROR) {
-                if (!JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex).startsWith("file") && !
-                        JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex).startsWith("/") &&
+                if (!JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex).startsWith("file") &&
+                        !JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex).startsWith("/") &&
                         !JCUtils.isWifiConnected(getContext()) && !WIFI_TIP_DIALOG_SHOWED) {
+
+                    // 启动的时候判断当前网络是否是 wifi
+
                     showWifiDialog(JCUserActionStandard.ON_CLICK_START_ICON);
+
                     return;
                 }
+
                 startVideo();
+
                 onEvent(currentState != CURRENT_STATE_ERROR ? JCUserAction.ON_CLICK_START_ICON : JCUserAction.ON_CLICK_START_ERROR);
+
             } else if (currentState == CURRENT_STATE_PLAYING) {
                 Log.i(TAG, "pauseVideo [" + this.hashCode() + "] ");
                 onEvent(JCUserAction.ON_CLICK_PAUSE);
@@ -255,15 +266,23 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                 startVideo();
             }
         } else if (i == R.id.fullscreen) {
+
             Log.i(TAG, "onClick fullscreen [" + this.hashCode() + "] ");
-            if (currentState == CURRENT_STATE_AUTO_COMPLETE) return;
+
+            if (currentState == CURRENT_STATE_AUTO_COMPLETE)
+                return;
+
             if (currentScreen == SCREEN_WINDOW_FULLSCREEN) {
                 //quit fullscreen
                 backPress();
             } else {
+
                 Log.i(TAG, "toFullscreenActivity [" + this.hashCode() + "] ");
+
                 onEvent(JCUserAction.ON_ENTER_FULLSCREEN);
-                startWindowFullscreen();
+
+                startLandscape();
+                //startWindowFullscreen();
             }
         } else if (i == R.id.fl_container && currentState == CURRENT_STATE_ERROR) {
             Log.i(TAG, "onClick surfaceContainer State=Error [" + this.hashCode() + "] ");
@@ -397,15 +416,23 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
      */
     public void startVideo() {
         Log.i(TAG, "startVideo [" + this.hashCode() + "] ");
-        JCVideoPlayerManager.completeAll();
+
+        JCVideoPlayerManager.completeAll(); //释放当前对象
+
         initSurfaceView();
+
         addSurfaceView();
+
         AudioManager mAudioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         mAudioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
+        // 设置屏幕保持不暗
         JCUtils.scanForActivity(getContext()).getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         JCMediaManager.CURRENT_PLAYING_URL = JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex);
-        JCMediaManager.CURRENT_PLING_LOOP = loop; // 设置 是否循环播放，但是这个参数设置写在初始化后，并没有起作用啊
+        JCMediaManager.CURRENT_PLING_LOOP = loop;
         JCMediaManager.MAP_HEADER_DATA = headData;
+
         onStatePreparing(); // 设置状态参数
 
         JCVideoPlayerManager.setFirstFloor(this); // 绑定对象
@@ -416,9 +443,12 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
      */
     public void onVideoRendingStart() {
         Log.i(TAG, "onVideoRendingStart " + " [" + this.hashCode() + "] ");
-        isVideoRendingStart = true;
+
+        isVideoRendingStart = true; // 设置标记
+
         if (currentState != CURRENT_STATE_PREPARING && currentState != CURRENT_STATE_PREPARING_CHANGING_URL && currentState != CURRENT_STATE_PLAYING_BUFFERING_START)
             return;
+
         if (seekToInAdvance != 0) {
             JCMediaManager.instance().mediaPlayer.seekTo(seekToInAdvance);
             seekToInAdvance = 0;
@@ -428,7 +458,9 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                 JCMediaManager.instance().mediaPlayer.seekTo(position);
             }
         }
-        startProgressTimer();
+
+// TAG: 发现这里代码重复了， 在onStatePlaying中调用了 startProgressTimer
+//        startProgressTimer();
         onStatePlaying();
     }
 
@@ -470,11 +502,14 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
      */
     public void onStateNormal() {
         Log.i(TAG, "onStateNormal " + " [" + this.hashCode() + "] ");
-        currentState = CURRENT_STATE_NORMAL;
+
+        currentState = CURRENT_STATE_NORMAL; // 设置初始状态
+
         cancelProgressTimer(); // 取消设置 Progress 进度的 Timer
 
-        // 要把小窗口给取消掉
+        // 判断是否是当前对象
         if (isCurrentJcvd()) {//这个if是无法取代的，否则进入全屏的时候会releaseMediaPlayer
+            Log.e("TAG", " isCurrentJcvd: " + isCurrentJcvd());
             JCMediaManager.instance().releaseMediaPlayer();
         }
     }
@@ -578,7 +613,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        if (currentScreen == SCREEN_WINDOW_FULLSCREEN || currentScreen == SCREEN_WINDOW_TINY) {
+        if (currentScreen == SCREEN_WINDOW_FULLSCREEN /*|| currentScreen == SCREEN_WINDOW_TINY*/) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             return;
         }
@@ -733,6 +768,9 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
         }
     }
 
+    /**
+     * 启动播放进度条显示
+     */
     public void startProgressTimer() {
         cancelProgressTimer();
         UPDATE_PROGRESS_TIMER = new Timer();
@@ -876,37 +914,83 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
         // SeekBar 拖动 回调
     }
 
+
+    public void startLandscape() {
+        //设置横屏
+        ((Activity) getContext()).setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+        // 注意：还得重新计算 GLSurfaceView的宽高
+//        FrameLayout.LayoutParams params = (LayoutParams) JCMediaManager.sSurfaceView.getLayoutParams();
+//        params.width = LayoutParams.MATCH_PARENT;
+//        params.height = LayoutParams.MATCH_PARENT;
+//
+//        JCMediaManager.sSurfaceView.setLayoutParams(params);
+
+        this.currentScreen = JCVideoPlayerStandard.SCREEN_WINDOW_FULLSCREEN;
+
+
+        ViewGroup.LayoutParams layoutParams = this.getLayoutParams();
+        layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+
+        // 由于设置的 GLSurfaceView 本身就是 MATCH_PARENT，所以这里 设置了 setLayoutParams 会重新计算整个控件
+        this.setLayoutParams(layoutParams);
+    }
+
+
     /**
      * 启动窗口全屏
      */
     public void startWindowFullscreen() {
         Log.i(TAG, "startWindowFullscreen " + " [" + this.hashCode() + "] ");
+
         hideSupportActionBar(getContext());
+
         JCUtils.getAppCompActivity(getContext()).setRequestedOrientation(FULLSCREEN_ORIENTATION);
 
-        ViewGroup vp = (ViewGroup) (JCUtils.scanForActivity(getContext()))//.getWindow().getDecorView();
-                .findViewById(Window.ID_ANDROID_CONTENT);
+        // 重点代码：这里查找根View
+        ViewGroup vp = (ViewGroup) (JCUtils.scanForActivity(getContext())).findViewById(Window.ID_ANDROID_CONTENT); //.getWindow().getDecorView();
+        // 如果是全屏显示过，那么肯定有这个id FULLSCREEN_ID
         View old = vp.findViewById(FULLSCREEN_ID);
         if (old != null) {
-            vp.removeView(old);
+            vp.removeView(old); // 就把这个id 删除
         }
 
         surfaceViewContainer.removeView(JCMediaManager.sSurfaceView);
 
         try {
+
+            // 反射创建对象
             Constructor<JCVideoPlayer> constructor = (Constructor<JCVideoPlayer>) JCVideoPlayer.this.getClass().getConstructor(Context.class);
             JCVideoPlayer jcVideoPlayer = constructor.newInstance(getContext());
+
+            // 重点代码：为新创建的这个 Framlayout JCVideoPlayer 对象设置一个id
             jcVideoPlayer.setId(FULLSCREEN_ID);
+
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            // 重新创建一个 FrameLayout 添加到根View中
             vp.addView(jcVideoPlayer, lp);
+
+            // 设置参数
             jcVideoPlayer.setUp(urlMap, currentUrlMapIndex, JCVideoPlayerStandard.SCREEN_WINDOW_FULLSCREEN, objects);
+
+            // 设置状态
             jcVideoPlayer.setState(currentState);
+
+            // 重新添加 GLSurfaceView
             jcVideoPlayer.addSurfaceView();
+
+            // 添加管理
             JCVideoPlayerManager.setSecondFloor(jcVideoPlayer);
+
 //            final Animation ra = AnimationUtils.loadAnimation(getContext(), R.anim.start_fullscreen);
 //            jcVideoPlayer.setAnimation(ra);
+
+            // 设置状态
             onStateNormal();
+
             CLICK_QUIT_FULLSCREEN_TIME = System.currentTimeMillis();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -915,35 +999,35 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     /**
      * 开启小窗口
      */
-    public void startWindowTiny() {
-        Log.i(TAG, "startWindowTiny " + " [" + this.hashCode() + "] ");
-        onEvent(JCUserAction.ON_ENTER_TINYSCREEN);
-        if (currentState == CURRENT_STATE_NORMAL || currentState == CURRENT_STATE_ERROR) return;
-        ViewGroup vp = (ViewGroup) (JCUtils.scanForActivity(getContext()))//.getWindow().getDecorView();
-                .findViewById(Window.ID_ANDROID_CONTENT);
-        View old = vp.findViewById(TINY_ID);
-        if (old != null) {
-            vp.removeView(old);
-        }
-        surfaceViewContainer.removeView(JCMediaManager.sSurfaceView);
-        try {
-            Constructor<JCVideoPlayer> constructor = (Constructor<JCVideoPlayer>) JCVideoPlayer.this.getClass().getConstructor(Context.class);
-            JCVideoPlayer jcVideoPlayer = constructor.newInstance(getContext());
-            jcVideoPlayer.setId(TINY_ID);
-            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(400, 400);
-            lp.gravity = Gravity.RIGHT | Gravity.BOTTOM;
-            vp.addView(jcVideoPlayer, lp);
-            jcVideoPlayer.setUp(urlMap, currentUrlMapIndex, JCVideoPlayerStandard.SCREEN_WINDOW_TINY, objects);
-            jcVideoPlayer.setState(currentState);
-            jcVideoPlayer.addSurfaceView();
-            JCVideoPlayerManager.setSecondFloor(jcVideoPlayer);
-            onStateNormal();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    public void startWindowTiny() {
+//        Log.i(TAG, "startWindowTiny " + " [" + this.hashCode() + "] ");
+//        onEvent(JCUserAction.ON_ENTER_TINYSCREEN);
+//        if (currentState == CURRENT_STATE_NORMAL || currentState == CURRENT_STATE_ERROR) return;
+//        ViewGroup vp = (ViewGroup) (JCUtils.scanForActivity(getContext()))//.getWindow().getDecorView();
+//                .findViewById(Window.ID_ANDROID_CONTENT);
+//        View old = vp.findViewById(TINY_ID);
+//        if (old != null) {
+//            vp.removeView(old);
+//        }
+//        surfaceViewContainer.removeView(JCMediaManager.sSurfaceView);
+//        try {
+//            Constructor<JCVideoPlayer> constructor = (Constructor<JCVideoPlayer>) JCVideoPlayer.this.getClass().getConstructor(Context.class);
+//            JCVideoPlayer jcVideoPlayer = constructor.newInstance(getContext());
+//            jcVideoPlayer.setId(TINY_ID);
+//            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(400, 400);
+//            lp.gravity = Gravity.RIGHT | Gravity.BOTTOM;
+//            vp.addView(jcVideoPlayer, lp);
+//            jcVideoPlayer.setUp(urlMap, currentUrlMapIndex, JCVideoPlayerStandard.SCREEN_WINDOW_TINY, objects);
+//            jcVideoPlayer.setState(currentState);
+//            jcVideoPlayer.addSurfaceView();
+//            JCVideoPlayerManager.setSecondFloor(jcVideoPlayer);
+//            onStateNormal();
+//        } catch (InstantiationException e) {
+//            e.printStackTrace();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * 开启全屏
@@ -979,7 +1063,10 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 //            jcVideoPlayer.setAnimation(ra);
             jcVideoPlayer.setUp(urlMap, defaultUrlMapIndex, JCVideoPlayerStandard.SCREEN_WINDOW_FULLSCREEN, objects);
             CLICK_QUIT_FULLSCREEN_TIME = System.currentTimeMillis();
+
+            // 模拟手指主动执行点击事件
             jcVideoPlayer.startButton.performClick();
+
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (Exception e) {
@@ -991,29 +1078,29 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     //isCurrentJcvd and isCurrenPlayUrl should be two logic methods,isCurrentJcvd is for different jcvd with same
     //url when fullscreen or tiny screen. isCurrenPlayUrl is to find where is myself when back from tiny screen.
     //Sometimes they are overlap.
-    // 判断是否在小屏幕里面
+    // 判断是否是当前的JCVideoPlayer
     public boolean isCurrentJcvd() {//虽然看这个函数很不爽，但是干不掉
         return JCVideoPlayerManager.getCurrentJcvd() != null
                 && JCVideoPlayerManager.getCurrentJcvd() == this;
     }
 
-    //    public boolean isCurrenPlayingUrl() {
-//        return url.equals(JCMediaManager.CURRENT_PLAYING_URL);
-//    }
 
     //退出全屏和小窗的方法
-//    public void playOnThisJcvd() {
-//        Log.i(TAG, "playOnThisJcvd " + " [" + this.hashCode() + "] ");
-//        //1.清空全屏和小窗的jcvd
-//        currentState = JCVideoPlayerManager.getSecondFloor().currentState;
-//        currentUrlMapIndex = JCVideoPlayerManager.getSecondFloor().currentUrlMapIndex;
-//        clearFloatScreen(); // 清除漂浮的小窗口
-//
-//        //2.在本jcvd上播放，这是接着播放的
-//        setState(currentState);
-//
-//        addSurfaceView();
-//    }
+    public void playOnThisJcvd() {
+
+        Log.i(TAG, "playOnThisJcvd " + " [" + this.hashCode() + "] ");
+
+        //1.清空全屏和小窗的jcvd
+        currentState = JCVideoPlayerManager.getSecondFloor().currentState;
+        currentUrlMapIndex = JCVideoPlayerManager.getSecondFloor().currentUrlMapIndex;
+
+        clearFloatScreen(); // 清除漂浮的小窗口
+
+        //2.在本jcvd上播放，这是接着播放的
+        setState(currentState);
+
+        addSurfaceView();
+    }
 
     /**
      * onBackPressed 后退逻辑
@@ -1082,8 +1169,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     public void autoFullscreen(float x) {
         if (isCurrentJcvd()
                 && currentState == CURRENT_STATE_PLAYING
-                && currentScreen != SCREEN_WINDOW_FULLSCREEN
-                && currentScreen != SCREEN_WINDOW_TINY) {
+                && currentScreen != SCREEN_WINDOW_FULLSCREEN) {
             if (x > 0) {
                 JCUtils.getAppCompActivity(getContext()).setRequestedOrientation(
                         ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);

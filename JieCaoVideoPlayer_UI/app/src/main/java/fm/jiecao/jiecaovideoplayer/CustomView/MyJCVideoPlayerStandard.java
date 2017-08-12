@@ -107,9 +107,4 @@ public class MyJCVideoPlayerStandard extends JCVideoPlayerStandard {
         super.startWindowFullscreen();
     }
 
-    @Override
-    public void startWindowTiny() {
-        super.startWindowTiny();
-    }
-
 }

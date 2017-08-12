@@ -59,6 +59,7 @@ public class MySurfaceView extends GLSurfaceView {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         super.surfaceCreated(holder);
+        Log.e("TAG", "--------   surfaceCreated   --------");
         mJCVideoPlayerManager.prepare();
     }
 
@@ -67,12 +68,6 @@ public class MySurfaceView extends GLSurfaceView {
         super.surfaceChanged(holder, format, w, h);
 
         Log.e("TAG", "--------   surfaceChanged   --------");
-/*
-        boolean hasValidSize = (mVideoSize.x == w && mVideoSize.y == h);
-        if (hasValidSize) {
-
-            mJCVideoPlayerManager.
-        }*/
     }
 
     @Override

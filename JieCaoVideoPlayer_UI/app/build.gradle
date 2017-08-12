@@ -5,7 +5,7 @@ android {
     buildToolsVersion '26.0.0'
 
     defaultConfig {
-        applicationId "fm.jiecao.jiecaovideoplayer"
+        applicationId "www.tutu.com"
         minSdkVersion 16
         targetSdkVersion 25
         versionCode 63

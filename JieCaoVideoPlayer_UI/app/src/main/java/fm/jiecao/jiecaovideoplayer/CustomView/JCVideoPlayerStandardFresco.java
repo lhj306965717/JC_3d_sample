@@ -53,7 +53,7 @@ public class JCVideoPlayerStandardFresco extends JCVideoPlayerStandard {
             fullscreenButton.setImageResource(R.drawable.jc_shrink);
             backButton.setVisibility(View.VISIBLE);
 //            tinyBackImageView.setVisibility(View.INVISIBLE);
-        } else if (currentScreen == SCREEN_LAYOUT_LIST) {
+        } /*else if (currentScreen == SCREEN_LAYOUT_LIST) {
             fullscreenButton.setImageResource(R.drawable.jc_enlarge);
             backButton.setVisibility(View.GONE);
 //            tinyBackImageView.setVisibility(View.INVISIBLE);
@@ -61,7 +61,7 @@ public class JCVideoPlayerStandardFresco extends JCVideoPlayerStandard {
 //            tinyBackImageView.setVisibility(View.VISIBLE);
             setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE,
                     View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-        }
+        }*/
     }
 
     @Override

@@ -49,9 +49,9 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
     }
 
     public JCMediaManager() {
-        mMediaHandlerThread = new HandlerThread(TAG);
+        mMediaHandlerThread = new HandlerThread(TAG);  // 这里用的好
         mMediaHandlerThread.start();
-        mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper()));
+        mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper())); // 所有message消息都是在子线程中执行
         mainThreadHandler = new Handler();
     }
 
@@ -172,6 +172,14 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         });
     }
 
+    public void pause() {
+        mediaPlayer.pause();
+    }
+
+    public void start() {
+        mediaPlayer.start();
+    }
+
     /**
      * 多媒体资源缓冲更新回调
      *
@@ -192,12 +200,12 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
 
     /**
      * Seekto定位回调
-     *
-     * @param mp 注意：
-     *           seekTo()是定位方法，可以让播放器从指定的位置开始播放，
-     *           需要注意的是该方法是个异步方法，也就是说该方法返回时并不意味着定位完成，
-     *           尤其是播放的网络文件，真正定位完成时会触发OnSeekComplete.onSeekComplete()，
-     *           如果需要是可以调用setOnSeekCompleteListener(OnSeekCompleteListener)设置监听器来处理的
+     * <p>
+     * 注意：
+     * seekTo()是定位方法，可以让播放器从指定的位置开始播放，
+     * 需要注意的是该方法是个异步方法，也就是说该方法返回时并不意味着定位完成，
+     * 尤其是播放的网络文件，真正定位完成时会触发OnSeekComplete.onSeekComplete()，
+     * 如果需要是可以调用setOnSeekCompleteListener(OnSeekCompleteListener)设置监听器来处理的
      */
     @Override
     public void onSeekComplete(MediaPlayer mp) {
