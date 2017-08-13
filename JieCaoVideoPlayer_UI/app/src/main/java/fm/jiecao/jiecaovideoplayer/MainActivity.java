@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAboutApi = (Button) findViewById(R.id.about_api);
         mAboutWebView = (Button) findViewById(R.id.about_webview);
 
+
         mTinyWindow.setOnClickListener(this);
         mAutoTinyWindow.setOnClickListener(this);
         mAboutListView.setOnClickListener(this);

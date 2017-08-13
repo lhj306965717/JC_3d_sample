@@ -90,9 +90,9 @@ public class JCUtils {
     }
 
     public static void saveProgress(Context context, String url, int progress) {
-        if (!JCVideoPlayer.SAVE_PROGRESS) return;
-        SharedPreferences spn = context.getSharedPreferences("JCVD_PROGRESS",
-                Context.MODE_PRIVATE);
+        if (!JCVideoPlayer.SAVE_PROGRESS)
+            return;
+        SharedPreferences spn = context.getSharedPreferences("JCVD_PROGRESS", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = spn.edit();
         editor.putInt(url, progress);
         editor.apply();

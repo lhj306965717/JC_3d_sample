@@ -34,6 +34,7 @@ import java.util.TimerTask;
 public class JCVideoPlayerStandard extends JCVideoPlayer {
 
     protected static Timer DISMISS_CONTROL_VIEW_TIMER;
+    private boolean isLock = false;  // 屏幕是否被锁住
 
     public ImageView backButton;
     public ProgressBar bottomProgressBar, loadingProgressBar;
@@ -134,7 +135,9 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     @Override
     public void onStatePreparing() {
         super.onStatePreparing();
+
         changeUiToPreparingShow();
+
         startDismissControlViewTimer();
     }
 
@@ -142,7 +145,6 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void onStatePreparingChangingUrl(int urlMapIndex, int seekToInAdvance) {
         super.onStatePreparingChangingUrl(urlMapIndex, seekToInAdvance);
         loadingProgressBar.setVisibility(VISIBLE);
-//        startButton.setVisibility(INVISIBLE);
     }
 
     @Override
@@ -156,7 +158,10 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void onStatePause() {
         super.onStatePause();
         changeUiToPauseShow();
-        cancelDismissControlViewTimer();
+
+        // 这里不应该取消显示的，还是应该在一段时间内自动消失
+//        cancelDismissControlViewTimer();
+        startDismissControlViewTimer();
     }
 
     @Override
@@ -174,8 +179,11 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     @Override
     public void onStateAutoComplete() {
         super.onStateAutoComplete();
+
         changeUiToCompleteClear();
+
         cancelDismissControlViewTimer();
+
         bottomProgressBar.setProgress(100);
     }
 
@@ -198,10 +206,10 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
                         int progress = mSeekTimePosition * 100 / (duration == 0 ? 1 : duration);
                         bottomProgressBar.setProgress(progress);
                     }
+
                     if (!mChangePosition && !mChangeVolume) {
-                        Log.e("TAG", "mChangePosition " + mChangePosition + "   mChangeVolume: " + mChangeVolume);
-//                        onEvent(JCUserActionStandard.ON_CLICK_BLANK);
                         onClickUiToggle(); // 更新显示UI
+//                        onEvent(JCUserActionStandard.ON_CLICK_BLANK);
                     }
                     break;
             }
@@ -325,7 +333,10 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     @Override
     public void onVideoRendingStart() {
         super.onVideoRendingStart();
-        setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
+
+        // 渲染缓冲状态，这个状态是正确的
+        setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
+
         startDismissControlViewTimer();
     }
 
@@ -334,24 +345,24 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
      */
     public void onClickUiToggle() {
         if (currentState == CURRENT_STATE_PREPARING) {
-            if (bottomContainer.getVisibility() == View.VISIBLE) {
+            if (bottomContainer.getVisibility() == View.VISIBLE) {  // 播放准备状态
                 changeUiToPreparingClear();
             } else {
                 changeUiToPreparingShow();
             }
         } else if (currentState == CURRENT_STATE_PLAYING) {
-            if (bottomContainer.getVisibility() == View.VISIBLE) {
+            if (bottomContainer.getVisibility() == View.VISIBLE) {  // 播放状态
                 changeUiToPlayingClear();
             } else {
                 changeUiToPlayingShow();
             }
-        } else if (currentState == CURRENT_STATE_PAUSE) {
+        } else if (currentState == CURRENT_STATE_PAUSE) {  // 暂停状态
             if (bottomContainer.getVisibility() == View.VISIBLE) {
                 changeUiToPauseClear();
             } else {
                 changeUiToPauseShow();
             }
-        } else if (currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {
+        } else if (currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {  // 缓冲状态
             if (bottomContainer.getVisibility() == View.VISIBLE) {
                 changeUiToPlayingBufferingClear();
             } else {
@@ -360,6 +371,9 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         }
     }
 
+    /**
+     * 点击事件 UI 响应 控制隐藏
+     */
     public void onCLickUiToggleToClear() {
         if (currentState == CURRENT_STATE_PREPARING) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
@@ -401,38 +415,36 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         }
 
 
-        Log.e("TAG", "bottomContainer状态：" + bottomCon);
-
-        // 锁图标
-        mIv_lock.setVisibility(lockImg);
-
         // 顶部layout
         topContainer.setVisibility(topCon);
-
+        // 锁图标
+        mIv_lock.setVisibility(lockImg);
         // 底部layout
         bottomContainer.setVisibility(bottomCon);
-
+        // Loading 加载
         loadingProgressBar.setVisibility(loadingPro);
-
         //封面图片的显示
         thumbImageView.setVisibility(thumbImg);
-
-        // 最顶部的播放进度条
+        // 最底部的播放进度条
         bottomProgressBar.setVisibility(bottomPro);
     }
 
     /**
      * 注意初始化会调用这个方法
      * 初始状态 UI 的状态
+     * <p>
+     * 注意：当正式加入项目的时候，这里默认的初始化状态，所有都为隐藏状态
+     * 即使初始化加载失败，那么就根据 info 或 error 中消息来做重试，但是在加载状态是不显示的
+     * 另一种就是，当点击开始后，将所有状态隐藏起来
      */
     public void changeUiToNormal() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE);
+            case SCREEN_WINDOW_FULLSCREEN:  // 初始状态下，一般都不是直接默认为 全屏
+                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
         }
@@ -440,14 +452,15 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
 
     /**
      * 播放器准备完成  ----  UI显示
+     * 只要没出第一帧，除了loading，其他都隐藏
      */
     public void changeUiToPreparingShow() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 break;
         }
     }
@@ -458,10 +471,10 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void changeUiToPreparingClear() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 break;
         }
     }
@@ -472,11 +485,11 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void changeUiToPlayingShow() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
         }
@@ -502,11 +515,11 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void changeUiToPauseShow() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
         }
@@ -518,24 +531,26 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void changeUiToPauseClear() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
                 break;
         }
     }
 
     /**
      * 从播放 到  缓冲 --- UI显示
+     * <p>
+     * 缓冲状态只显示 loading,和 最底部的进度条
      */
     public void changeUiToPlayingBufferingShow() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
                 break;
         }
     }
@@ -562,11 +577,11 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void changeUiToCompleteClear() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
         }
@@ -578,25 +593,28 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     public void changeUiToError() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
         }
     }
 
 
+    /**
+     * 播放完成  ----- UI显示
+     */
     public void changeUiToCompleteShow() {
         switch (currentScreen) {
             case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
             case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE);
+                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
                 updateStartImage();
                 break;
         }
@@ -793,9 +811,11 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
                     ((Activity) context).runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+
                             bottomContainer.setVisibility(View.INVISIBLE);
                             topContainer.setVisibility(View.INVISIBLE);
-//                            startButton.setVisibility(View.INVISIBLE);
+                            mIv_lock.setVisibility(View.INVISIBLE);
+
                             if (clarityPopWindow != null && clarityPopWindow.isShowing()) {
                                 clarityPopWindow.dismiss();
                             }
@@ -811,13 +831,16 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     @Override
     public void onAutoCompletion() {
         super.onAutoCompletion();
+
         cancelDismissControlViewTimer();
     }
 
     @Override
     public void onCompletion() {
         super.onCompletion();
+
         cancelDismissControlViewTimer();
+
         if (clarityPopWindow != null) {
             clarityPopWindow.dismiss();
         }

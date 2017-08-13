@@ -9,7 +9,6 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import fm.jiecao.jcvideoplayer_lib.JCVideoPlayer;
-import fm.jiecao.jcvideoplayer_lib.JCVideoPlayerStandard;
 
 /**
  * Created by Nathen on 16/7/31.
@@ -40,7 +39,7 @@ public class PlayDirectlyActivity extends AppCompatActivity implements View.OnCl
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.fullscreen:
-                JCVideoPlayerStandard.startFullscreen(this, JCVideoPlayerStandard.class, "http://2449.vod.myqcloud.com/2449_22ca37a6ea9011e5acaaf51d105342e3.f20.mp4", "嫂子辛苦了");
+                //JCVideoPlayerStandard.startFullscreen(this, JCVideoPlayerStandard.class, "http://2449.vod.myqcloud.com/2449_22ca37a6ea9011e5acaaf51d105342e3.f20.mp4", "嫂子辛苦了");
                 break;
             case R.id.tiny_window:
                 Toast.makeText(PlayDirectlyActivity.this, "Comming Soon", Toast.LENGTH_SHORT).show();
