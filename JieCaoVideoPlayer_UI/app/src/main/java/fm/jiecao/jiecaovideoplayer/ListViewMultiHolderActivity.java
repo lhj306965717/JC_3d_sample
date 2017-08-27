@@ -72,7 +72,7 @@ public class ListViewMultiHolderActivity extends AppCompatActivity {
         public View getView(int position, View convertView, ViewGroup parent) {
             //This is the point
             if (convertView != null && convertView.getTag() != null && convertView.getTag() instanceof VideoHolder) {
-                ((VideoHolder) convertView.getTag()).jcVideoPlayer.release();
+//                ((VideoHolder) convertView.getTag()).jcVideoPlayer.release();
             }
             if (getItemViewType(position) == 1) {
                 VideoHolder viewHolder;

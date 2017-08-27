@@ -29,72 +29,75 @@
 
     <!-- 上面部分 Top -->
     <RelativeLayout
+        android:visibility="invisible"
         android:id="@+id/layout_top"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
+        android:layout_height="44dp"
         android:layout_alignParentTop="true"
         android:background="@drawable/jc_title_bg"
         android:gravity="center_vertical">
 
         <ImageView
             android:id="@+id/back"
-            android:layout_width="23dp"
-            android:layout_height="match_parent"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginLeft="13dp"
-            android:paddingLeft="11dp"
-            android:paddingStart="11dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/jc_click_back_selector"/>
-
-        <TextView
-            android:id="@+id/title"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_centerVertical="true"
-            android:layout_marginEnd="12dp"
-            android:layout_marginLeft="12dp"
-            android:layout_marginRight="12dp"
-            android:layout_marginStart="12dp"
-            android:layout_toEndOf="@+id/back"
-            android:layout_toRightOf="@+id/back"
-            android:singleLine="true"
-            android:textColor="#ffffff"
-            android:textSize="18sp"/>
+            android:layout_marginLeft="10dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/icon_zuojiantou"/>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <FrameLayout
+            android:id="@+id/fl_top"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_alignParentRight="true"
             android:layout_marginRight="20dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_toRightOf="@id/back"
+            android:orientation="horizontal"
+            android:visibility="invisible">
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|left"
+                android:layout_marginEnd="12dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="12dp"
+                android:layout_marginStart="12dp"
+                android:ellipsize="end"
+                android:lines="1"
+                android:maxEms="15"
+                android:textColor="#ffffff"
+                android:textSize="18sp"/>
 
             <ImageView
                 android:id="@+id/iv_collect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/icon_collect"/>
+                android:layout_gravity="center_vertical"
+                android:src="@drawable/icon_collect"
+                android:visibility="gone"/>
 
             <ImageView
                 android:id="@+id/iv_download"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="18dp"
+                android:layout_gravity="center_vertical|right"
+                android:layout_marginLeft="20dp"
                 android:src="@drawable/icon_bf_download"/>
 
             <ImageView
                 android:id="@+id/iv_share"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="18dp"
-                android:src="@drawable/icon_share"/>
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="20dp"
+                android:src="@drawable/icon_share"
+                android:visibility="gone"/>
 
-        </LinearLayout>
+        </FrameLayout>
 
     </RelativeLayout>
 
@@ -104,6 +107,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
+        android:layout_marginLeft="15dp"
         android:src="@drawable/icon_unlock"
         android:visibility="invisible"/>
 
@@ -111,12 +115,12 @@
     <LinearLayout
         android:id="@+id/layout_bottom"
         android:layout_width="match_parent"
-        android:layout_height="54dp"
+        android:layout_height="44dp"
         android:layout_alignParentBottom="true"
         android:background="@drawable/jc_bottom_bg"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:visibility="visible">
+        android:visibility="invisible">
 
         <!--  android:src="@drawable/selector_start_pause"-->
         <ImageView
@@ -144,14 +148,14 @@
             android:layout_weight="1.0"
             android:background="@null"
             android:max="100"
-            android:maxHeight="2dp"
-            android:minHeight="2dp"
+            android:maxHeight="1.8dp"
+            android:minHeight="1.8dp"
             android:paddingBottom="8dp"
             android:paddingLeft="12dp"
             android:paddingRight="12dp"
             android:paddingTop="8dp"
             android:progressDrawable="@drawable/jc_bottom_seek_progress"
-            android:thumb="@drawable/jc_bottom_seek_thumb"/>
+            android:thumb="@drawable/layer_list_thumb_pressed"/>
 
         <TextView
             android:id="@+id/total"
@@ -167,7 +171,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_gravity="center_vertical"
-            android:paddingLeft="12dp"
+            android:layout_marginLeft="12dp"
             android:text="LR"
             android:textColor="@android:color/white"
             android:textSize="13sp"
@@ -189,11 +193,10 @@
         android:id="@+id/bottom_progress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="1.5dp"
+        android:layout_height="1.2dp"
         android:layout_alignParentBottom="true"
         android:max="100"
         android:progressDrawable="@drawable/jc_bottom_progress"/>
-
 
     <!-- 中间的loading加载 -->
     <ProgressBar
@@ -205,18 +208,25 @@
         android:indeterminateDrawable="@drawable/jc_loading"
         android:visibility="invisible"/>
 
-
     <!-- 播放错误，点击重试操作 -->
-    <TextView
-        android:id="@+id/retry_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:drawableTop="@drawable/jc_error_normal"
-        android:gravity="center_horizontal"
-        android:text="@string/replay"
-        android:textColor="#ffffff"
-        android:textSize="12sp"
-        android:visibility="invisible"/>
+    <FrameLayout
+        android:id="@+id/fl_retry"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:visibility="invisible">
+
+        <TextView
+            android:id="@+id/retry_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_gravity="center"
+            android:drawableTop="@drawable/jc_error_normal"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"/>
+
+    </FrameLayout>
 
 </RelativeLayout>

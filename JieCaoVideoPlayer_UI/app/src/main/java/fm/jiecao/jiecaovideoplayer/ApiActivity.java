@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import fm.jiecao.jcvideoplayer_lib.JCVideoPlayer;
-import fm.jiecao.jcvideoplayer_lib.JCVideoPlayerSimple;
 import fm.jiecao.jcvideoplayer_lib.JCVideoPlayerStandard;
 
 /**
@@ -30,7 +29,6 @@ import fm.jiecao.jcvideoplayer_lib.JCVideoPlayerStandard;
  */
 public class ApiActivity extends AppCompatActivity implements View.OnClickListener {
     Button mSmallChange, mBigChange, mOrientation;
-    JCVideoPlayerSimple mJcVideoPlayerSimple;
     JCVideoPlayerStandard mJcVideoPlayerStandard;
     JCVideoPlayer.JCAutoFullscreenListener mSensorEventListener;
     SensorManager mSensorManager;
@@ -53,9 +51,9 @@ public class ApiActivity extends AppCompatActivity implements View.OnClickListen
         mBigChange.setOnClickListener(this);
         mOrientation.setOnClickListener(this);
 
-        mJcVideoPlayerSimple = (JCVideoPlayerSimple) findViewById(R.id.simple_demo);
-        mJcVideoPlayerSimple.setUp("http://devimages.apple.com/iphone/samples/bipbop/gear1/prog_index.m3u8"
-                , JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "嫂子在家吗");
+//        mJcVideoPlayerSimple = (JCVideoPlayerSimple) findViewById(R.id.simple_demo);
+//        mJcVideoPlayerSimple.setUp("http://devimages.apple.com/iphone/samples/bipbop/gear1/prog_index.m3u8"
+//                , JCVideoPlayerStandard.SCREEN_LAYOUT_NORMAL, "嫂子在家吗");
 
 
         mJcVideoPlayerStandard = (JCVideoPlayerStandard) findViewById(R.id.jc_video);

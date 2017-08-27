@@ -1,10 +1,7 @@
 package fm.jiecao.jcvideoplayer_lib;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -13,11 +10,9 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -35,16 +30,13 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
 
     protected static Timer DISMISS_CONTROL_VIEW_TIMER;
     private boolean isLock = false;  // 屏幕是否被锁住
-
-    public ImageView backButton;
-    public ProgressBar bottomProgressBar, loadingProgressBar;
-    public TextView titleTextView;
     public ImageView thumbImageView;
-    public TextView retryTextView;
-    public PopupWindow clarityPopWindow;
-
     protected DismissControlViewTimerTask mDismissControlViewTimerTask;
     private ImageView mIv_lock;
+    private View topContainer;
+    private TextView mTitle;
+    private ImageView mBack;
+    private ImageView mIv_download;
 
 
     public JCVideoPlayerStandard(Context context) {
@@ -65,33 +57,29 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
 
         super.init(context);
 
-        // 最底部的进度条
-        bottomProgressBar = (ProgressBar) findViewById(R.id.bottom_progress);
-        // 标题
-        titleTextView = (TextView) findViewById(R.id.title);
-        // 返回
-        backButton = (ImageView) findViewById(R.id.back);
         // 播放器封面
         thumbImageView = (ImageView) findViewById(R.id.thumb);
-        // loading
-        loadingProgressBar = (ProgressBar) findViewById(R.id.loading);
+
+        // 总的顶部UI 部分
+        topContainer = findViewById(R.id.layout_top);
+        // 标题
+        mTitle = (TextView) findViewById(R.id.title);
+        // 返回
+        mBack = (ImageView) findViewById(R.id.back);
+        // 下载图标
+        mIv_download = (ImageView) findViewById(R.id.iv_download);
+
+
         // 全屏锁图标
         mIv_lock = (ImageView) findViewById(R.id.iv_lock);
-        // 播放错误或者重试
-        retryTextView = (TextView) findViewById(R.id.retry_text);
-
 
         // 暂时注销 封面的的点击事件
 //      thumbImageView.setOnClickListener(this);
 //      thumbImageView.setVisibility(View.INVISIBLE);
 
-
-        backButton.setOnClickListener(this);
-
     }
 
     public void setUp(LinkedHashMap urlMap, int defaultUrlMapIndex, int screen, Object... objects) {
-
         // 注意：先走父类函数
         super.setUp(urlMap, defaultUrlMapIndex, screen, objects);
 
@@ -99,92 +87,15 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
             return;
 
         // 设置标题
-        titleTextView.setText(objects[0].toString());
+        mTitle.setText(objects[0].toString());
 
         // 判断是否是全屏状态
         if (currentScreen == SCREEN_WINDOW_FULLSCREEN) {
-
-            backButton.setVisibility(View.VISIBLE);
-
-            // changeStartButtonSize((int) getResources().getDimension(R.dimen.jc_start_button_w_h_fullscreen));
-
+            mBack.setVisibility(View.VISIBLE);
             // 判断是否是正常状态
         } else if (currentScreen == SCREEN_LAYOUT_NORMAL /*|| currentScreen == SCREEN_LAYOUT_LIST*/) {
-
-            backButton.setVisibility(View.GONE);
-
-            //   changeStartButtonSize((int) getResources().getDimension(R.dimen.jc_start_button_w_h_normal));
+            mBack.setVisibility(View.GONE);
         }
-    }
-
-    public void changeStartButtonSize(int size) {
-        ViewGroup.LayoutParams lp = startButton.getLayoutParams();
-        lp.height = size;
-        lp.width = size;
-        lp = loadingProgressBar.getLayoutParams();
-        lp.height = size;
-        lp.width = size;
-    }
-
-    @Override
-    public void onStateNormal() {
-        super.onStateNormal();
-        changeUiToNormal(); // 初始化UI
-    }
-
-    @Override
-    public void onStatePreparing() {
-        super.onStatePreparing();
-
-        changeUiToPreparingShow();
-
-        startDismissControlViewTimer();
-    }
-
-    @Override
-    public void onStatePreparingChangingUrl(int urlMapIndex, int seekToInAdvance) {
-        super.onStatePreparingChangingUrl(urlMapIndex, seekToInAdvance);
-        loadingProgressBar.setVisibility(VISIBLE);
-    }
-
-    @Override
-    public void onStatePlaying() {
-        super.onStatePlaying();
-        changeUiToPlayingShow();
-        startDismissControlViewTimer();
-    }
-
-    @Override
-    public void onStatePause() {
-        super.onStatePause();
-        changeUiToPauseShow();
-
-        // 这里不应该取消显示的，还是应该在一段时间内自动消失
-//        cancelDismissControlViewTimer();
-        startDismissControlViewTimer();
-    }
-
-    @Override
-    public void onStatePlaybackBufferingStart() {
-        super.onStatePlaybackBufferingStart();
-        changeUiToPlayingBufferingShow();
-    }
-
-    @Override
-    public void onStateError() {
-        super.onStateError();
-        changeUiToError();
-    }
-
-    @Override
-    public void onStateAutoComplete() {
-        super.onStateAutoComplete();
-
-        changeUiToCompleteClear();
-
-        cancelDismissControlViewTimer();
-
-        bottomProgressBar.setProgress(100);
     }
 
     @Override
@@ -193,33 +104,19 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         if (id == R.id.fl_container) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
+                    cancelDismissControlViewTimer();
                     break;
                 case MotionEvent.ACTION_MOVE:
                     break;
                 case MotionEvent.ACTION_UP:
-
-                    // 因为事件在OnClick中响应了，所以这里不用执行
-                    //startDismissControlViewTimer();
-
-                    if (mChangePosition) {
-                        int duration = getDuration();
-                        int progress = mSeekTimePosition * 100 / (duration == 0 ? 1 : duration);
-                        bottomProgressBar.setProgress(progress);
-                    }
-
-                    if (!mChangePosition && !mChangeVolume) {
-                        onClickUiToggle(); // 更新显示UI
-//                        onEvent(JCUserActionStandard.ON_CLICK_BLANK);
-                    }
-                    break;
-            }
-        } else if (id == R.id.bottom_seek_progress) { // SeekBar事件
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    cancelDismissControlViewTimer();
-                    break;
-                case MotionEvent.ACTION_UP:
                     startDismissControlViewTimer();
+                    if (!mChangePosition && !mChangeVolume && !mChangeBrightness) {
+//                        onClickUiToggle(); // 更新显示UI
+
+                        Log.e("TAG", "触摸---->状态："+currentState);
+
+                        setUIState(currentState); // 根据状态显示UI
+                    }
                     break;
             }
         }
@@ -233,70 +130,31 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
         int i = v.getId();
 
         if (i == R.id.thumb) { // 封面图片响应
-
             if (TextUtils.isEmpty(JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex))) {
                 Toast.makeText(getContext(), getResources().getString(R.string.no_url), Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (currentState == CURRENT_STATE_NORMAL) {
-                if (!JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex).startsWith("file") &&
-                        !JCUtils.getCurrentUrlFromMap(urlMap, currentUrlMapIndex).startsWith("/") &&
-                        !JCUtils.isWifiConnected(getContext()) && !WIFI_TIP_DIALOG_SHOWED) {
+                if (!JCUtils.isWifiConnected(getContext()) && !WIFI_TIP_DIALOG_SHOWED) {
                     showWifiDialog(JCUserActionStandard.ON_CLICK_START_THUMB);
                     return;
                 }
 
-                onEvent(JCUserActionStandard.ON_CLICK_START_THUMB);
-
                 startVideo();
 
-            } else if (currentState == CURRENT_STATE_AUTO_COMPLETE) {
-                onClickUiToggle();
             }
-        } else if (i == R.id.fl_container) {
-            startDismissControlViewTimer();
         } else if (i == R.id.back) {
+
             backPress();
+
+        } else if (i == R.id.iv_lock) {
+
+
+        } else if (i == R.id.iv_download) {
+
+
         }
-    }
-
-
-    @Override
-    public void showWifiDialog(int action) {
-        super.showWifiDialog(action);
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setMessage(getResources().getString(R.string.tips_not_wifi));
-        builder.setPositiveButton(getResources().getString(R.string.tips_not_wifi_confirm), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                onEvent(JCUserActionStandard.ON_CLICK_START_THUMB);
-                startVideo();
-                WIFI_TIP_DIALOG_SHOWED = true;
-            }
-        });
-        builder.setNegativeButton(getResources().getString(R.string.tips_not_wifi_cancel), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                if (currentScreen == SCREEN_WINDOW_FULLSCREEN) {
-                    dialog.dismiss();
-                    clearFullscreenLayout();
-                }
-            }
-        });
-        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
-            @Override
-            public void onCancel(DialogInterface dialog) {
-                dialog.dismiss();
-                if (currentScreen == SCREEN_WINDOW_FULLSCREEN) {
-                    dialog.dismiss();
-                    clearFullscreenLayout();
-                }
-            }
-        });
-        builder.create().show();
     }
 
     @Override
@@ -312,333 +170,267 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     }
 
     @Override
-    public void setProgressAndText(int progress, int position, int duration) {
-        super.setProgressAndText(progress, position, duration);
-        if (progress != 0) bottomProgressBar.setProgress(progress);
-    }
+    public void setUIState(int state, int urlMapIndex, int seekToInAdvance) {
 
-    @Override
-    public void setBufferProgress(int bufferProgress) {
-        super.setBufferProgress(bufferProgress);
-        if (bufferProgress != 0) bottomProgressBar.setSecondaryProgress(bufferProgress);
-    }
+        switch (state) {
+            case CURRENT_STATE_NORMAL:  // 空闲状态
 
-    @Override
-    public void resetProgressAndTime() {
-        super.resetProgressAndTime();
-        bottomProgressBar.setProgress(0);
-        bottomProgressBar.setSecondaryProgress(0);
-    }
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mFl_retry.setVisibility(View.INVISIBLE);
+                mLoading.setVisibility(View.INVISIBLE);
+                bottomProgressBar.setVisibility(View.INVISIBLE);
 
-    @Override
-    public void onVideoRendingStart() {
-        super.onVideoRendingStart();
+                updateStartImage();
 
-        // 渲染缓冲状态，这个状态是正确的
-        setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
+                break;
+            case CURRENT_STATE_PREPARING:  // 准备状态
 
-        startDismissControlViewTimer();
-    }
+                mLoading.setVisibility(View.VISIBLE);
 
-    /**
-     * 点击事件 UI 响应 控制
-     */
-    public void onClickUiToggle() {
-        if (currentState == CURRENT_STATE_PREPARING) {
-            if (bottomContainer.getVisibility() == View.VISIBLE) {  // 播放准备状态
-                changeUiToPreparingClear();
-            } else {
-                changeUiToPreparingShow();
-            }
-        } else if (currentState == CURRENT_STATE_PLAYING) {
-            if (bottomContainer.getVisibility() == View.VISIBLE) {  // 播放状态
-                changeUiToPlayingClear();
-            } else {
-                changeUiToPlayingShow();
-            }
-        } else if (currentState == CURRENT_STATE_PAUSE) {  // 暂停状态
-            if (bottomContainer.getVisibility() == View.VISIBLE) {
-                changeUiToPauseClear();
-            } else {
-                changeUiToPauseShow();
-            }
-        } else if (currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {  // 缓冲状态
-            if (bottomContainer.getVisibility() == View.VISIBLE) {
-                changeUiToPlayingBufferingClear();
-            } else {
-                changeUiToPlayingBufferingShow();
-            }
+                bottomProgressBar.setVisibility(View.INVISIBLE);
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mFl_retry.setVisibility(View.INVISIBLE);
+
+                break;
+            case CURRENT_STATE_PREPARING_CHANGING_URL: // 重新设置URL地址播放
+
+                mLoading.setVisibility(VISIBLE);
+
+                onStatePreparingChangingUrl(urlMapIndex, seekToInAdvance);
+
+                bottomProgressBar.setVisibility(View.INVISIBLE);
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mFl_retry.setVisibility(View.INVISIBLE);
+
+                break;
+            case CURRENT_STATE_PLAYING:  // 播放状态
+
+                /* onVideoRendingStart */
+
+                if (bottomContainer.getVisibility() == View.VISIBLE) {
+
+                    topContainer.setVisibility(View.INVISIBLE);
+                    mIv_lock.setVisibility(View.INVISIBLE);
+                    bottomContainer.setVisibility(View.INVISIBLE);
+                    mFl_retry.setVisibility(View.INVISIBLE);
+                    mLoading.setVisibility(View.INVISIBLE);
+
+                    bottomProgressBar.setVisibility(View.VISIBLE);
+
+                } else {
+
+                    mFl_retry.setVisibility(View.INVISIBLE);
+                    mLoading.setVisibility(View.INVISIBLE);
+
+                    bottomContainer.setVisibility(View.VISIBLE);
+                    bottomProgressBar.setVisibility(View.VISIBLE);
+                    topContainer.setVisibility(View.VISIBLE);
+
+                    switch (currentScreen) {
+                        case SCREEN_LAYOUT_NORMAL:
+
+                        {
+                            mTitle.setVisibility(View.INVISIBLE);
+                            mIv_download.setVisibility(View.INVISIBLE);
+                        }
+
+                        mIv_lock.setVisibility(View.INVISIBLE);
+
+                        break;
+                        case SCREEN_WINDOW_FULLSCREEN:
+
+                        {
+                            mTitle.setVisibility(View.VISIBLE);
+                            mIv_download.setVisibility(View.VISIBLE);
+                        }
+
+                        mIv_lock.setVisibility(View.INVISIBLE);
+
+                        break;
+                    }
+
+                    updateStartImage();
+
+                    startDismissControlViewTimer();
+                }
+                break;
+            case CURRENT_STATE_PLAYING_BUFFERING_START:  // 缓冲状态
+
+                mLoading.setVisibility(View.VISIBLE);
+                bottomProgressBar.setVisibility(View.VISIBLE);
+
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mFl_retry.setVisibility(View.INVISIBLE);
+
+                break;
+            case CURRENT_STATE_PAUSE:  // 暂停状态
+
+                if (bottomContainer.getVisibility() == View.VISIBLE) {
+
+                    topContainer.setVisibility(View.INVISIBLE);
+                    mIv_lock.setVisibility(View.INVISIBLE);
+                    bottomContainer.setVisibility(View.INVISIBLE);
+                    mFl_retry.setVisibility(View.INVISIBLE);
+                    mLoading.setVisibility(View.INVISIBLE);
+
+                    bottomProgressBar.setVisibility(View.VISIBLE);
+
+                } else {
+
+                    mFl_retry.setVisibility(View.INVISIBLE);
+                    mLoading.setVisibility(View.INVISIBLE);
+
+                    bottomContainer.setVisibility(View.VISIBLE);
+                    bottomProgressBar.setVisibility(View.VISIBLE);
+                    topContainer.setVisibility(View.VISIBLE);
+
+                    switch (currentScreen) {
+                        case SCREEN_LAYOUT_NORMAL:
+
+                        {
+                            mTitle.setVisibility(View.INVISIBLE);
+                            mIv_download.setVisibility(View.INVISIBLE);
+                        }
+
+                        mIv_lock.setVisibility(View.INVISIBLE);
+
+                        break;
+                        case SCREEN_WINDOW_FULLSCREEN:
+
+                        {
+                            mTitle.setVisibility(View.VISIBLE);
+                            mIv_download.setVisibility(View.VISIBLE);
+                        }
+
+                        mIv_lock.setVisibility(View.INVISIBLE);
+
+                        break;
+                    }
+
+                    updateStartImage();
+
+                    startDismissControlViewTimer();
+                }
+                break;
+            case CURRENT_STATE_AUTO_COMPLETE:  // 播放完成状态
+
+                mFl_retry.setVisibility(View.VISIBLE);
+
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mLoading.setVisibility(View.INVISIBLE);
+                bottomProgressBar.setVisibility(View.INVISIBLE);
+
+                updateStartImage();
+
+                cancelDismissControlViewTimer();
+
+                break;
+            case CURRENT_STATE_ERROR:  // 错误状态
+
+                mFl_retry.setVisibility(View.VISIBLE);
+
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mLoading.setVisibility(View.INVISIBLE);
+                bottomProgressBar.setVisibility(View.INVISIBLE);
+
+                updateStartImage();
+
+                cancelDismissControlViewTimer();
+
+                break;
         }
     }
 
     /**
-     * 点击事件 UI 响应 控制隐藏
+     * 点击Dilaog显示情况下，隐藏UI
      */
     public void onCLickUiToggleToClear() {
         if (currentState == CURRENT_STATE_PREPARING) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
-                changeUiToPreparingClear();
-            } else {
+                setUIState(CURRENT_STATE_PREPARING);
             }
         } else if (currentState == CURRENT_STATE_PLAYING) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
-                changeUiToPlayingClear();
-            } else {
+
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mFl_retry.setVisibility(View.INVISIBLE);
+                mLoading.setVisibility(View.INVISIBLE);
+
+                bottomProgressBar.setVisibility(View.VISIBLE);
             }
         } else if (currentState == CURRENT_STATE_PAUSE) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
-                changeUiToPauseClear();
-            } else {
+
+                topContainer.setVisibility(View.INVISIBLE);
+                mIv_lock.setVisibility(View.INVISIBLE);
+                bottomContainer.setVisibility(View.INVISIBLE);
+                mFl_retry.setVisibility(View.INVISIBLE);
+                mLoading.setVisibility(View.INVISIBLE);
+
+                bottomProgressBar.setVisibility(View.VISIBLE);
+
             }
         } else if (currentState == CURRENT_STATE_AUTO_COMPLETE) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
-                changeUiToCompleteClear();
-            } else {
+                setUIState(CURRENT_STATE_AUTO_COMPLETE);
             }
         } else if (currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {
             if (bottomContainer.getVisibility() == View.VISIBLE) {
-                changeUiToPlayingBufferingClear();
-            } else {
+                setUIState(CURRENT_STATE_PLAYING_BUFFERING_START);
             }
         }
     }
 
-    public void setAllControlsVisible(int topCon, int bottomCon, int loadingPro,
-                                      int thumbImg, int lockImg, int bottomPro) {
 
-        // TODO 这里是重点代码
-        //TODO 这个地方由于前边的各种状态不是太明白，所以暂时只能这样写一下（目前没发现问题），作者可以优化一下
-        if (!isVideoRendingStart && currentScreen != SCREEN_WINDOW_FULLSCREEN) {
-            //只要没开始渲染图像，一直显示缩略图
-            thumbImg = VISIBLE;
-            Log.e("TAG", "thumbImg++++VISIBLE");
-        }
-
-
-        // 顶部layout
-        topContainer.setVisibility(topCon);
-        // 锁图标
-        mIv_lock.setVisibility(lockImg);
-        // 底部layout
-        bottomContainer.setVisibility(bottomCon);
-        // Loading 加载
-        loadingProgressBar.setVisibility(loadingPro);
-        //封面图片的显示
-        thumbImageView.setVisibility(thumbImg);
-        // 最底部的播放进度条
-        bottomProgressBar.setVisibility(bottomPro);
-    }
-
-    /**
-     * 注意初始化会调用这个方法
-     * 初始状态 UI 的状态
-     * <p>
-     * 注意：当正式加入项目的时候，这里默认的初始化状态，所有都为隐藏状态
-     * 即使初始化加载失败，那么就根据 info 或 error 中消息来做重试，但是在加载状态是不显示的
-     * 另一种就是，当点击开始后，将所有状态隐藏起来
-     */
-    public void changeUiToNormal() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:  // 初始状态下，一般都不是直接默认为 全屏
-                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-        }
-    }
-
-    /**
-     * 播放器准备完成  ----  UI显示
-     * 只要没出第一帧，除了loading，其他都隐藏
-     */
-    public void changeUiToPreparingShow() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                break;
-        }
-    }
-
-    /**
-     * 播放器准备完成  ----  UI隐藏
-     */
-    public void changeUiToPreparingClear() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                break;
-        }
-    }
-
-    /**
-     * 播放 ---- UI显示
-     */
-    public void changeUiToPlayingShow() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-        }
-    }
-
-    /**
-     * 播放 ---- UI隐藏
-     */
-    public void changeUiToPlayingClear() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                break;
-        }
-    }
-
-    /**
-     * 暂停 ---- UI显示
-     */
-    public void changeUiToPauseShow() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.VISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-        }
-    }
-
-    /**
-     * 暂停 ---- UI隐藏
-     */
-    public void changeUiToPauseClear() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                break;
-        }
-    }
-
-    /**
-     * 从播放 到  缓冲 --- UI显示
-     * <p>
-     * 缓冲状态只显示 loading,和 最底部的进度条
-     */
-    public void changeUiToPlayingBufferingShow() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                break;
-        }
-    }
-
-    /**
-     * 从播放 到 缓冲  -----  UI隐藏
-     */
-    public void changeUiToPlayingBufferingClear() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                updateStartImage();
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.VISIBLE);
-                updateStartImage();
-                break;
-        }
-    }
-
-    /**
-     * 播放完成  ----- UI隐藏
-     */
-    public void changeUiToCompleteClear() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-        }
-    }
-
-    /**
-     * 出现错误  UI隐藏
-     */
-    public void changeUiToError() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-        }
-    }
-
-
-    /**
-     * 播放完成  ----- UI显示
-     */
-    public void changeUiToCompleteShow() {
-        switch (currentScreen) {
-            case SCREEN_LAYOUT_NORMAL:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-            case SCREEN_WINDOW_FULLSCREEN:
-                setAllControlsVisible(View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
-                updateStartImage();
-                break;
-        }
-    }
+    /*    +++++++++++++++++       UI 状态        +++++++++++++++          */
 
     public void updateStartImage() {
         if (currentState == CURRENT_STATE_PLAYING) {
+
             startButton.setImageResource(R.drawable.icon_start);
-            retryTextView.setVisibility(INVISIBLE);
+
         } else if (currentState == CURRENT_STATE_ERROR) {
-//            startButton.setImageResource(R.drawable.jc_click_error_selector);
+
             Drawable drawable = getContext().getResources().getDrawable(R.drawable.jc_error_normal);
             drawable.setBounds(0, 0, drawable.getMinimumWidth(), drawable.getMinimumHeight());
-            retryTextView.setCompoundDrawables(null, drawable, null, null);
-            retryTextView.setVisibility(VISIBLE);
+            mRetryText.setCompoundDrawables(null, drawable, null, null);
+
+            // 判断网络是否连接
+            if (!JCUtils.isNetworkConnected(getContext())) {
+                mRetryText.setText(getContext().getString(R.string.network_error_retry));
+            } else {
+                mRetryText.setText(getContext().getString(R.string.click_retry));
+            }
+
+            // 取消显示
+            cancelProgressTimer();
+            cancelDismissControlViewTimer();
+
         } else if (currentState == CURRENT_STATE_AUTO_COMPLETE) {
-//            startButton.setImageResource(R.drawable.jc_restart_normal);
+
             Drawable drawable = getContext().getResources().getDrawable(R.drawable.jc_restart_normal);
             drawable.setBounds(0, 0, drawable.getMinimumWidth(), drawable.getMinimumHeight());
-            retryTextView.setCompoundDrawables(null, drawable, null, null);
-            retryTextView.setVisibility(VISIBLE);
+            mRetryText.setCompoundDrawables(null, drawable, null, null);
+
+            mRetryText.setText(getContext().getString(R.string.replay));
+
         } else {
+
             startButton.setImageResource(R.drawable.icon_bf_stop);
-            retryTextView.setVisibility(INVISIBLE);
         }
     }
 
@@ -798,32 +590,21 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     }
 
     public class DismissControlViewTimerTask extends TimerTask {
-
         @Override
         public void run() {
-            if (currentState != CURRENT_STATE_NORMAL
-                    && currentState != CURRENT_STATE_ERROR
-                    && currentState != CURRENT_STATE_AUTO_COMPLETE) {
+            if (currentState != CURRENT_STATE_NORMAL && currentState != CURRENT_STATE_ERROR && currentState != CURRENT_STATE_AUTO_COMPLETE) {
 
-                Context context = getContext();
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
 
-                if (context != null && context instanceof Activity) {
-                    ((Activity) context).runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+                        bottomContainer.setVisibility(View.INVISIBLE);
+                        topContainer.setVisibility(View.INVISIBLE);
+                        mIv_lock.setVisibility(View.INVISIBLE);
 
-                            bottomContainer.setVisibility(View.INVISIBLE);
-                            topContainer.setVisibility(View.INVISIBLE);
-                            mIv_lock.setVisibility(View.INVISIBLE);
-
-                            if (clarityPopWindow != null && clarityPopWindow.isShowing()) {
-                                clarityPopWindow.dismiss();
-                            }
-
-                            bottomProgressBar.setVisibility(View.VISIBLE);
-                        }
-                    });
-                }
+                        bottomProgressBar.setVisibility(View.VISIBLE);
+                    }
+                });
             }
         }
     }
@@ -831,62 +612,12 @@ public class JCVideoPlayerStandard extends JCVideoPlayer {
     @Override
     public void onAutoCompletion() {
         super.onAutoCompletion();
-
         cancelDismissControlViewTimer();
     }
 
     @Override
     public void onCompletion() {
         super.onCompletion();
-
         cancelDismissControlViewTimer();
-
-        if (clarityPopWindow != null) {
-            clarityPopWindow.dismiss();
-        }
     }
-
-
-//    /**
-//     * 设置时间
-//     */
-//    public void setSystemTimeAndBattery() {
-//        SimpleDateFormat dateFormater = new SimpleDateFormat("HH:mm");
-//        Date date = new Date();
-//        video_current_time.setText(dateFormater.format(date));
-//        if (!brocasting) {
-//            getContext().registerReceiver(
-//                    battertReceiver,
-//                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-//            );
-//        }
-//    }
-
-//    private boolean brocasting = false;
-
-//    private BroadcastReceiver battertReceiver = new BroadcastReceiver() {
-//        public void onReceive(Context context, Intent intent) {
-//            String action = intent.getAction();
-//            if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
-//                int level = intent.getIntExtra("level", 0);
-//                int scale = intent.getIntExtra("scale", 100);
-//                int percent = level * 100 / scale;
-//                if (percent < 15) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_10);
-//                } else if (percent >= 15 && percent < 40) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_30);
-//                } else if (percent >= 40 && percent < 60) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_50);
-//                } else if (percent >= 60 && percent < 80) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_70);
-//                } else if (percent >= 80 && percent < 95) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_90);
-//                } else if (percent >= 95 && percent <= 100) {
-//                    battery_level.setBackgroundResource(R.drawable.jc_battery_level_100);
-//                }
-//                getContext().unregisterReceiver(battertReceiver);
-//                brocasting = false;
-//            }
-//        }
-//    };
 }

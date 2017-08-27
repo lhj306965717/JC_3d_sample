@@ -28,6 +28,7 @@ public class MySurfaceView extends GLSurfaceView {
     // x as width, y as height
     protected Point mVideoSize;
     private int mZoomMode = 4; // 16:9
+    private JCVideoPlayer mJcVideoPlayer;
 
     public MySurfaceView(Context context) {
         super(context);
@@ -44,9 +45,14 @@ public class MySurfaceView extends GLSurfaceView {
         JCMediaManager.sSurface = mVideoRenderer.getVideoSurface();
     }
 
+    public void setJCVideoPlayer(JCVideoPlayer player) {
+        this.mJcVideoPlayer = player;
+    }
+
     private void init(Context context) {
-        setEGLContextClientVersion(2);
+        setEGLContextClientVersion(2); // 设置使用的 OpenGL ES 2.0
         mVideoRenderer = new TQITVideoRenderer(context);
+
         setRenderer(mVideoRenderer);
 
         setFocusable(true);
@@ -59,22 +65,44 @@ public class MySurfaceView extends GLSurfaceView {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         super.surfaceCreated(holder);
-        Log.e("TAG", "--------   surfaceCreated   --------");
-        mJCVideoPlayerManager.prepare();
+        Log.e("TAG", "++++++++++++++   surfaceCreated   ++++++++++++++");
+        // 界面可见的时候调用 surfaceCreated
+        // 当处于装备状态时才能调用prepare
+        if (mJcVideoPlayer.currentState == JCVideoPlayer.CURRENT_STATE_PREPARING) {
+            mJCVideoPlayerManager.prepare();
+        }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
         super.surfaceChanged(holder, format, w, h);
-
-        Log.e("TAG", "--------   surfaceChanged   --------");
+        Log.e("TAG", "++++++++++++++   surfaceChanged   ++++++++++++++");
+        // 再这里重新设置
+        if (mJcVideoPlayer.mLrswap.isChecked()) {
+            JCMediaManager.sSurfaceView.setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_2D); // 必须要重新设置为默认的模式后，再设置为左右模式显示才不会模糊
+            JCMediaManager.sSurfaceView.setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_LR);
+        } else {
+            JCMediaManager.sSurfaceView.setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_2D);
+        }
+        // 当 SurfaceView 的宽高发生变化时调用，如横屏与竖屏的切换
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         super.surfaceDestroyed(holder);
         Log.e("TAG", "+++++++++   surfaceDestroyed   ++++++++++");
-        mJCVideoPlayerManager.releaseMediaPlayer();
+        Log.e("TAG", "surfaceDestroyed--->currentState状态: " + mJcVideoPlayer.currentState);
+
+        // 必须要，否则会报错
+        // 如果是 播放状态、暂停状态、缓冲状态
+        // 不管什么状态，如果 SurfaceView被销毁了，那么保存进度
+       //  if (mJcVideoPlayer.currentState == JCVideoPlayer.CURRENT_STATE_PLAYING || mJcVideoPlayer.currentState == CURRENT_STATE_PAUSE || mJcVideoPlayer.currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {
+//        mJcVideoPlayer.savePlayProgress(); // 保存进度
+//        mJCVideoPlayerManager.mediaPlayer.pause();
+//        JCMediaManager.instance().releaseMediaPlayer(); // 重置
+//        mJcVideoPlayer.currentState = CURRENT_STATE_DESTROYED;
+    //     }
+        // 界面 被 隐藏 gaon 的时候
     }
 
     public void setVideoSize(Point videoSize) {
@@ -92,15 +120,22 @@ public class MySurfaceView extends GLSurfaceView {
         }
     }
 
+//		TQITVideoRenderer.TQIT_VIDEO_MODE_LR
+//     左右屏幕显示立体视频的格式
+//		TQITVideoRenderer.TQIT_VIDEO_MODE_RL
+//     左边屏幕显示立体视频的格式
+//		TQITVideoRenderer.TQIT_VIDEO_MODE_2D
+//		显示非立体视频的格式----> 普通模式
+
     /**
+     * 用左、右的方式或2d模式的视频渲染。
+     *
      * @param mode
      * @return
      */
-    public int setMode(int mode) {
-        if (mVideoRenderer == null)
-            return -1;
-        mVideoRenderer.setParam(mode);
-        return 0;
+    public void setMode(int mode) {
+        if (mVideoRenderer != null)
+            mVideoRenderer.setParam(mode);
     }
 
     public int getZoomMode() {
@@ -121,118 +156,5 @@ public class MySurfaceView extends GLSurfaceView {
             getHolder().setFixedSize(mVideoSize.x, mVideoSize.y);
             requestLayout();
         }
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-
-//        Log.e(TAG, "onMeasure " + " [" + this.hashCode() + "] ");
-
-        int viewRotation = (int) getRotation();
-        int videoWidth = mVideoSize.x;
-        int videoHeight = mVideoSize.y;
-
-//        Log.e(TAG, "videoWidth = " + videoWidth + ", " + "videoHeight = " + videoHeight);
-//        Log.e(TAG, "viewRotation = " + viewRotation);
-
-        // 如果判断成立，则说明显示的TextureView和本身的位置是有90度的旋转的，所以需要交换宽高参数。
-        if (viewRotation == 90 || viewRotation == 270) {
-            int tempMeasureSpec = widthMeasureSpec;
-            widthMeasureSpec = heightMeasureSpec;
-            heightMeasureSpec = tempMeasureSpec;
-        }
-
-        int width = getDefaultSize(videoWidth, widthMeasureSpec);
-        int height = getDefaultSize(videoHeight, heightMeasureSpec);
-
-        if (videoWidth > 0 && videoHeight > 0) {
-
-            int widthSpecMode = MeasureSpec.getMode(widthMeasureSpec);
-            int widthSpecSize = MeasureSpec.getSize(widthMeasureSpec);
-            int heightSpecMode = MeasureSpec.getMode(heightMeasureSpec);
-            int heightSpecSize = MeasureSpec.getSize(heightMeasureSpec);
-
-//            Log.e(TAG, "widthMeasureSpec  [" + MeasureSpec.toString(widthMeasureSpec) + "]");
-//            Log.e(TAG, "heightMeasureSpec [" + MeasureSpec.toString(heightMeasureSpec) + "]");
-//
-//            if (widthSpecMode == MeasureSpec.EXACTLY)
-//                Log.e(TAG, "widthSpecMode [" + "MeasureSpec.EXACTLY" + "]");
-//            else if (widthSpecMode == MeasureSpec.AT_MOST)
-//                Log.e(TAG, "widthSpecMode [" + "MeasureSpec.AT_MOST" + "]");
-//            else {
-//                Log.e(TAG, "widthSpecMode [" + "UNSPECIFIED" + "]");
-//            }
-//
-//            if (heightSpecMode == MeasureSpec.EXACTLY)
-//                Log.e(TAG, "heightSpecMode [" + "MeasureSpec.EXACTLY" + "]");
-//            else if (heightSpecMode == MeasureSpec.AT_MOST)
-//                Log.e(TAG, "heightSpecMode [" + "MeasureSpec.AT_MOST" + "]");
-//            else {
-//                Log.e(TAG, "heightSpecMode [" + "UNSPECIFIED" + "]");
-//            }
-
-            if (widthSpecMode == MeasureSpec.EXACTLY && heightSpecMode == MeasureSpec.EXACTLY) {
-                // the size is fixed
-                width = widthSpecSize; // 1080
-                height = heightSpecSize; // 525
-
-                // 1280  *  720
-                // for compatibility, we adjust size based on aspect ratio
-                if (videoWidth > width || videoHeight > height) {
-
-                    float wRatio = (float) videoWidth / (float) width;
-                    float hRatio = (float) videoHeight / (float) height;
-
-                    //选择大的一个进行缩放
-                    float ratio = Math.max(wRatio, hRatio);
-
-                    // 根据比例重新计算宽高
-                    width = (int) Math.ceil((float) videoWidth / ratio);
-                    height = (int) Math.ceil((float) videoHeight / ratio);
-
-                } else {
-                    width = videoWidth;
-                    height = videoHeight;
-                }
-
-                Log.e("TAG", "得到最后的宽高：" + width + " : " + height);
-
-            } else if (widthSpecMode == MeasureSpec.EXACTLY) {
-                // only the width is fixed, adjust the height to match aspect ratio if possible
-                width = widthSpecSize;
-                height = width * videoHeight / videoWidth;
-                if (heightSpecMode == MeasureSpec.AT_MOST && height > heightSpecSize) {
-                    // couldn't match aspect ratio within the constraints
-                    height = heightSpecSize;
-                    width = height * videoWidth / videoHeight;
-                }
-            } else if (heightSpecMode == MeasureSpec.EXACTLY) {
-                // only the height is fixed, adjust the width to match aspect ratio if possible
-                height = heightSpecSize;
-                width = height * videoWidth / videoHeight;
-                if (widthSpecMode == MeasureSpec.AT_MOST && width > widthSpecSize) {
-                    // couldn't match aspect ratio within the constraints
-                    width = widthSpecSize;
-                    height = width * videoHeight / videoWidth;
-                }
-            } else {
-                // neither the width nor the height are fixed, try to use actual video size
-                width = videoWidth;
-                height = videoHeight;
-                if (heightSpecMode == MeasureSpec.AT_MOST && height > heightSpecSize) {
-                    // too tall, decrease both width and height
-                    height = heightSpecSize;
-                    width = height * videoWidth / videoHeight;
-                }
-                if (widthSpecMode == MeasureSpec.AT_MOST && width > widthSpecSize) {
-                    // too wide, decrease both width and height
-                    width = widthSpecSize;
-                    height = width * videoHeight / videoWidth;
-                }
-            }
-        } else {
-            // no size yet, just adopt the given spec sizes
-        }
-        setMeasuredDimension(width, height);
     }
 }

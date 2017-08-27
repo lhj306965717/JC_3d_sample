@@ -4,5 +4,8 @@
     <string name="tips_not_wifi_confirm">继续播放</string>
     <string name="tips_not_wifi_cancel">停止播放</string>
     <string name="no_url">播放地址无效</string>
-    <string name="replay">重播</string>
+    <string name="replay">点击重放</string>
+    <string name="click_retry">点击重试</string>
+    <string name="network_error_retry">网络错误，请点击重试!</string>
+    <string name="mobile_phone_close">当前手机无网络连接</string>
 </resources>

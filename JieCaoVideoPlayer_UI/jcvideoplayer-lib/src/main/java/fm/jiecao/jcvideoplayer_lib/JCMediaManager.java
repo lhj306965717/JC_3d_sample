@@ -52,7 +52,7 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         mMediaHandlerThread = new HandlerThread(TAG);  // 这里用的好
         mMediaHandlerThread.start();
         mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper())); // 所有message消息都是在子线程中执行
-        mainThreadHandler = new Handler();
+        mainThreadHandler = new Handler(Looper.myLooper());
     }
 
     public Point getVideoSize() {
@@ -102,8 +102,6 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
                         mediaPlayer.setOnVideoSizeChangedListener(JCMediaManager.this);
 
                         if (isNetworkResource) {
-                            // 这里为什么要用反射，这个方法本来就是公开的
-                            // 应该是通过反射直接去加载网络资源
                             Class<MediaPlayer> clazz = MediaPlayer.class;
                             Method method = clazz.getDeclaredMethod("setDataSource", String.class, Map.class);
                             method.invoke(mediaPlayer, CURRENT_PLAYING_URL, MAP_HEADER_DATA);

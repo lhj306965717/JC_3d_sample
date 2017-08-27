@@ -102,9 +102,4 @@ public class MyJCVideoPlayerStandard extends JCVideoPlayerStandard {
         super.onError(what, extra);
     }
 
-    @Override
-    public void startWindowFullscreen() {
-        super.startWindowFullscreen();
-    }
-
 }
