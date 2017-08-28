@@ -4,9 +4,9 @@ import android.graphics.Point;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.view.Surface;
 
 import java.lang.reflect.Method;
@@ -37,9 +37,9 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
     public static final int HANDLER_RELEASE = 2;
     public boolean isNetworkResource = true; //是否是网络资源
 
-    HandlerThread mMediaHandlerThread;
+//    HandlerThread mMediaHandlerThread;
     MediaHandler mMediaHandler;
-    Handler mainThreadHandler;
+//    Handler mainThreadHandler;
 
     public static JCMediaManager instance() {
         if (JCMediaManager == null) {
@@ -49,10 +49,10 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
     }
 
     public JCMediaManager() {
-        mMediaHandlerThread = new HandlerThread(TAG);  // 这里用的好
-        mMediaHandlerThread.start();
-        mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper())); // 所有message消息都是在子线程中执行
-        mainThreadHandler = new Handler(Looper.myLooper());
+//        mMediaHandlerThread = new HandlerThread(TAG);  // 这里用的好
+//        mMediaHandlerThread.start();
+        mMediaHandler = new MediaHandler(Looper.myLooper()/*mMediaHandlerThread.getLooper()*/); // 所有message消息都是在子线程中执行
+//        mainThreadHandler = new Handler(Looper.myLooper());
     }
 
     public Point getVideoSize() {
@@ -160,14 +160,14 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
      */
     @Override
     public void onCompletion(MediaPlayer mp) {
-        mainThreadHandler.post(new Runnable() {
-            @Override
-            public void run() {
+//        mainThreadHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (JCVideoPlayerManager.getCurrentJcvd() != null) {
                     JCVideoPlayerManager.getCurrentJcvd().onAutoCompletion();
                 }
-            }
-        });
+//            }
+//        });
     }
 
     public void pause() {
@@ -186,14 +186,14 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
      */
     @Override
     public void onBufferingUpdate(MediaPlayer mp, final int percent) {
-        mainThreadHandler.post(new Runnable() {
-            @Override
-            public void run() {
+//        mainThreadHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (JCVideoPlayerManager.getCurrentJcvd() != null) {
                     JCVideoPlayerManager.getCurrentJcvd().setBufferProgress(percent);
                 }
-            }
-        });
+//            }
+//        });
     }
 
     /**
@@ -207,14 +207,14 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
      */
     @Override
     public void onSeekComplete(MediaPlayer mp) {
-        mainThreadHandler.post(new Runnable() {
-            @Override
-            public void run() {
+//        mainThreadHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (JCVideoPlayerManager.getCurrentJcvd() != null) {
                     JCVideoPlayerManager.getCurrentJcvd().onSeekComplete();
                 }
-            }
-        });
+//            }
+//        });
     }
 
     /**
@@ -227,14 +227,14 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
      */
     @Override
     public boolean onError(MediaPlayer mp, final int what, final int extra) {
-        mainThreadHandler.post(new Runnable() {
-            @Override
-            public void run() {
+//        mainThreadHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (JCVideoPlayerManager.getCurrentJcvd() != null) {
                     JCVideoPlayerManager.getCurrentJcvd().onError(what, extra);
                 }
-            }
-        });
+//            }
+//        });
         return true;
     }
 
@@ -248,14 +248,15 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
      */
     @Override
     public boolean onInfo(MediaPlayer mp, final int what, final int extra) {
-        mainThreadHandler.post(new Runnable() {
-            @Override
-            public void run() {
+        Log.e("TAG", "onInfo----> what: "+what +"   extra: "+extra);
+//        mainThreadHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (JCVideoPlayerManager.getCurrentJcvd() != null) {
                     JCVideoPlayerManager.getCurrentJcvd().onInfo(what, extra);
                 }
-            }
-        });
+//            }
+//        });
         return false;
     }
 
@@ -270,13 +271,13 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
     public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
         currentVideoWidth = width;
         currentVideoHeight = height;
-        mainThreadHandler.post(new Runnable() {
-            @Override
-            public void run() {
+//        mainThreadHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (JCVideoPlayerManager.getCurrentJcvd() != null) {
                     JCVideoPlayerManager.getCurrentJcvd().onVideoSizeChanged();
                 }
-            }
-        });
+//            }
+//        });
     }
 }
