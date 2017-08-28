@@ -132,6 +132,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     protected ProgressBar mLoading;
     protected View mFl_retry;
     protected TextView mRetryText;
+    protected boolean isSeekTo;
 
     public JCVideoPlayer(Context context) {
         super(context);
@@ -251,11 +252,11 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                 startVideo();
 
             } else if (currentState == CURRENT_STATE_PLAYING) {
-                JCMediaManager.instance().mediaPlayer.pause();
+                JCMediaManager.instance().pause();
                 onStatePause();
                 setUIState(CURRENT_STATE_PAUSE);
             } else if (currentState == CURRENT_STATE_PAUSE) {
-                JCMediaManager.instance().mediaPlayer.start();
+                JCMediaManager.instance().start();
                 onStatePlaying();
                 setUIState(CURRENT_STATE_PLAYING);
             } else if (currentState == CURRENT_STATE_AUTO_COMPLETE) {
@@ -444,6 +445,8 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 
         Log.e("TAG", "+++++  onStateNormal  +++++");
 
+        isSeekTo = false;
+
         currentState = CURRENT_STATE_NORMAL; // 设置初始状态
 
         cancelProgressTimer(); // 取消设置 Progress 进度的 Timer
@@ -527,7 +530,7 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
     public void onInfo(int what, int extra) {
         switch (what) {
             case MediaPlayer.MEDIA_INFO_BUFFERING_START: // MediaPlayer暂停播放等待缓冲更多数据
-                Log.e(TAG, "暂停播放等待缓冲更多数据....");
+                Log.e(TAG, "暂停播放等待缓冲更多数据----->状态："+currentState);
                 if (currentState == CURRENT_STATE_PLAYING_BUFFERING_START)
                     return;
                 BACKUP_PLAYING_BUFFERING_STATE = currentState; // 赋值状态
@@ -535,11 +538,15 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                 setUIState(CURRENT_STATE_PLAYING_BUFFERING_START);
                 break;
             case MediaPlayer.MEDIA_INFO_BUFFERING_END: // MediaPlayer在缓冲完后继续播放
-                Log.e(TAG, "缓冲完成继续播放....");
+                Log.e(TAG, "缓冲完成继续播放---->状态："+currentState);
                 if (BACKUP_PLAYING_BUFFERING_STATE != -1) {
                     if (currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {
                         onStatePlaying();
+                        Log.e("TAG", " BACKUP_PLAYING_BUFFERING_STATE: "+BACKUP_PLAYING_BUFFERING_STATE);
                         setUIState(BACKUP_PLAYING_BUFFERING_STATE);
+//                        if(!isSeekTo) {
+//                            setUIState(BACKUP_PLAYING_BUFFERING_STATE);
+//                        }
                     }
                     BACKUP_PLAYING_BUFFERING_STATE = -1;
                 }
@@ -840,10 +847,13 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
 
         int time = seekBar.getProgress() * getDuration() / 100;
 
-        JCMediaManager.instance().mediaPlayer.seekTo(time);
+        isSeekTo = true;
+
+        JCMediaManager.instance().seekTo(time);
 
         // 避免卡住不显示Loading
-        mLoading.setVisibility(View.VISIBLE);
+        onStatePlaybackBufferingStart();
+        setUIState(CURRENT_STATE_PLAYING_BUFFERING_START);
     }
 
     @Override
@@ -1094,14 +1104,14 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
                 case AudioManager.AUDIOFOCUS_GAIN:
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS:
-                    releaseAllVideos();
+//                    releaseAllVideos();
                     Log.e("TAG", "长久的失去焦点");
 
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                     try {
                         if (JCMediaManager.instance().mediaPlayer != null && JCMediaManager.instance().mediaPlayer.isPlaying()) {
-                            JCMediaManager.instance().mediaPlayer.pause();
+                            JCMediaManager.instance().pause();
                         }
                     } catch (IllegalStateException e) {
                         e.printStackTrace();
@@ -1122,7 +1132,12 @@ public abstract class JCVideoPlayer extends FrameLayout implements View.OnClickL
      * 如有需要就在子类中重写
      */
     public void onSeekComplete() {
-        mLoading.setVisibility(View.INVISIBLE);
+        isSeekTo = false;
+
+        Log.e("TAG", "++++++   onSeekComplete   ++++++");
+
+        onStatePlaying();
+        setUIState(CURRENT_STATE_PLAYING);
     }
 
     public void showWifiDialog(int event) {
