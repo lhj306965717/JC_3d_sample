@@ -28,12 +28,12 @@ public class JCVideoPlayerManager {
 //        return SECOND_FLOOR_JCVD;
 //    }
 
-    public static JCVideoPlayer getCurrentJcvd() {
-//        if (getSecondFloor() != null) {
-//            return getSecondFloor();
-//        }
-        return getFirstFloor();
-    }
+//    public static JCVideoPlayer getCurrentJcvd() {
+////        if (getSecondFloor() != null) {
+////            return getSecondFloor();
+////        }
+//        return getFirstFloor();
+//    }
 
     public static void completeAll() {
 //        if (SECOND_FLOOR_JCVD != null) {

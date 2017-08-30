@@ -120,7 +120,6 @@ public class ApiActivity extends AppCompatActivity implements View.OnClickListen
     @Override
     protected void onPause() {
         super.onPause();
-        JCVideoPlayer.releaseAllVideos();
         mSensorManager.unregisterListener(mSensorEventListener);
         JCVideoPlayer.clearSavedProgress(this, null);
     }

@@ -57,7 +57,6 @@ public class ListViewNormalActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         sensorManager.unregisterListener(sensorEventListener);
-        JCVideoPlayer.releaseAllVideos();
     }
 
     @Override

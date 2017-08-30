@@ -23,13 +23,13 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
 
     private static JCMediaManager JCMediaManager;
 
-    public static MySurfaceView sSurfaceView;
-    public static Surface sSurface;
+    public MySurfaceView sSurfaceView;
+    public Surface sSurface;
 
-    public MediaPlayer mediaPlayer;
-    public static String CURRENT_PLAYING_URL; // 播放地址
-    public static boolean CURRENT_PLING_LOOP;
-    public static Map<String, String> MAP_HEADER_DATA;
+    public String current_playing_url; // 播放地址
+    public Map<String, String> map_header_data;
+    public boolean current_pling_loop;
+    private MediaPlayer mediaPlayer;
     public int currentVideoWidth = 0;
     public int currentVideoHeight = 0;
 
@@ -84,7 +84,7 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
                         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                         mediaPlayer.setSurface(sSurface);
                         // 是否循环播放
-                        mediaPlayer.setLooping(CURRENT_PLING_LOOP);
+                        mediaPlayer.setLooping(current_pling_loop);
                         // 是否使用SurfaceHolder来显示
                         mediaPlayer.setScreenOnWhilePlaying(false);
                         // 视频资源加载回调监听
@@ -105,9 +105,9 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
                         if (isNetworkResource) {
                             Class<MediaPlayer> clazz = MediaPlayer.class;
                             Method method = clazz.getDeclaredMethod("setDataSource", String.class, Map.class);
-                            method.invoke(mediaPlayer, CURRENT_PLAYING_URL, MAP_HEADER_DATA);
+                            method.invoke(mediaPlayer, current_playing_url, map_header_data);
                         } else {
-                            mediaPlayer.setDataSource(CURRENT_PLAYING_URL); // 播放本地资源
+                            mediaPlayer.setDataSource(current_playing_url); // 播放本地资源
                         }
 
                         mediaPlayer.prepareAsync();
@@ -164,8 +164,8 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (JCVideoPlayerManager.getCurrentJcvd() != null) {
-                    JCVideoPlayerManager.getCurrentJcvd().onAutoCompletion();
+                if (JCVideoPlayerManager.getFirstFloor() != null) {
+                    JCVideoPlayerManager.getFirstFloor().onAutoCompletion();
                 }
             }
         });
@@ -189,7 +189,7 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         });
     }
 
-    public void seekTo(final int time){
+    public void seekTo(final int time) {
         mMediaHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -209,8 +209,8 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (JCVideoPlayerManager.getCurrentJcvd() != null) {
-                    JCVideoPlayerManager.getCurrentJcvd().setBufferProgress(percent);
+                if (JCVideoPlayerManager.getFirstFloor() != null) {
+                    JCVideoPlayerManager.getFirstFloor().setBufferProgress(percent);
                 }
             }
         });
@@ -230,11 +230,42 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (JCVideoPlayerManager.getCurrentJcvd() != null) {
-                    JCVideoPlayerManager.getCurrentJcvd().onSeekComplete();
+                if (JCVideoPlayerManager.getFirstFloor() != null) {
+                    JCVideoPlayerManager.getFirstFloor().onSeekComplete();
                 }
             }
         });
+    }
+
+    public int getCurrentPosition() {
+        try {
+            if (mediaPlayer != null) {
+                return mediaPlayer.getCurrentPosition();
+            }
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            return 0;
+        }
+        return 0;
+    }
+
+    public int getDuration(){
+        try {
+            if(mediaPlayer != null) {
+                return mediaPlayer.getDuration();
+            }
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            return 0;
+        }
+        return 0;
+    }
+
+    public boolean isMediaplayerNull(){
+        if (mediaPlayer != null)
+            return true;
+        else
+            return false;
     }
 
     /**
@@ -250,8 +281,8 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (JCVideoPlayerManager.getCurrentJcvd() != null) {
-                    JCVideoPlayerManager.getCurrentJcvd().onError(what, extra);
+                if (JCVideoPlayerManager.getFirstFloor() != null) {
+                    JCVideoPlayerManager.getFirstFloor().onError(what, extra);
                 }
             }
         });
@@ -271,8 +302,8 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (JCVideoPlayerManager.getCurrentJcvd() != null) {
-                    JCVideoPlayerManager.getCurrentJcvd().onInfo(what, extra);
+                if (JCVideoPlayerManager.getFirstFloor() != null) {
+                    JCVideoPlayerManager.getFirstFloor().onInfo(what, extra);
                 }
             }
         });
@@ -293,8 +324,8 @@ public class JCMediaManager implements MediaPlayer.OnPreparedListener, MediaPlay
         mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (JCVideoPlayerManager.getCurrentJcvd() != null) {
-                    JCVideoPlayerManager.getCurrentJcvd().onVideoSizeChanged();
+                if (JCVideoPlayerManager.getFirstFloor() != null) {
+                    JCVideoPlayerManager.getFirstFloor().onVideoSizeChanged();
                 }
             }
         });

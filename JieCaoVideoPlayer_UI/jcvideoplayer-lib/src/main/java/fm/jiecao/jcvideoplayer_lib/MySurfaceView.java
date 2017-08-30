@@ -42,7 +42,7 @@ public class MySurfaceView extends GLSurfaceView {
 
     public void setJCMediaManager(JCMediaManager manager) {
         this.mJCVideoPlayerManager = manager;
-        JCMediaManager.sSurface = mVideoRenderer.getVideoSurface();
+        mJCVideoPlayerManager.sSurface = mVideoRenderer.getVideoSurface();
     }
 
     public void setJCVideoPlayer(JCVideoPlayer player) {
@@ -50,7 +50,11 @@ public class MySurfaceView extends GLSurfaceView {
     }
 
     private void init(Context context) {
+
         setEGLContextClientVersion(2); // 设置使用的 OpenGL ES 2.0
+
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+
         mVideoRenderer = new TQITVideoRenderer(context);
 
         setRenderer(mVideoRenderer);
@@ -67,7 +71,7 @@ public class MySurfaceView extends GLSurfaceView {
         super.surfaceCreated(holder);
         Log.e("TAG", "++++++++++++++   surfaceCreated   ++++++++++++++");
         // 界面可见的时候调用 surfaceCreated
-        // 当处于装备状态时才能调用prepare
+        // 当处于可见状态时才能调用prepare
         if (mJcVideoPlayer.currentState == JCVideoPlayer.CURRENT_STATE_PREPARING) {
             mJCVideoPlayerManager.prepare();
         }
@@ -79,10 +83,10 @@ public class MySurfaceView extends GLSurfaceView {
         Log.e("TAG", "++++++++++++++   surfaceChanged   ++++++++++++++");
         // 再这里重新设置
         if (mJcVideoPlayer.mLrswap.isChecked()) {
-            JCMediaManager.sSurfaceView.setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_2D); // 必须要重新设置为默认的模式后，再设置为左右模式显示才不会模糊
-            JCMediaManager.sSurfaceView.setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_LR);
+            setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_2D); // 必须要重新设置为默认的模式后，再设置为左右模式显示才不会模糊
+            setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_LR);
         } else {
-            JCMediaManager.sSurfaceView.setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_2D);
+            setMode(TQITVideoRenderer.TQIT_VIDEO_MODE_2D);
         }
         // 当 SurfaceView 的宽高发生变化时调用，如横屏与竖屏的切换
     }
@@ -96,12 +100,12 @@ public class MySurfaceView extends GLSurfaceView {
         // 必须要，否则会报错
         // 如果是 播放状态、暂停状态、缓冲状态
         // 不管什么状态，如果 SurfaceView被销毁了，那么保存进度
-       //  if (mJcVideoPlayer.currentState == JCVideoPlayer.CURRENT_STATE_PLAYING || mJcVideoPlayer.currentState == CURRENT_STATE_PAUSE || mJcVideoPlayer.currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {
+        //  if (mJcVideoPlayer.currentState == JCVideoPlayer.CURRENT_STATE_PLAYING || mJcVideoPlayer.currentState == CURRENT_STATE_PAUSE || mJcVideoPlayer.currentState == CURRENT_STATE_PLAYING_BUFFERING_START) {
 //        mJcVideoPlayer.savePlayProgress(); // 保存进度
 //        mJCVideoPlayerManager.mediaPlayer.pause();
 //        JCMediaManager.instance().releaseMediaPlayer(); // 重置
 //        mJcVideoPlayer.currentState = CURRENT_STATE_DESTROYED;
-    //     }
+        //     }
         // 界面 被 隐藏 gaon 的时候
     }
 

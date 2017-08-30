@@ -73,7 +73,6 @@ public class AutoTinyNormalActivity extends AppCompatActivity implements AbsList
     @Override
     protected void onPause() {
         super.onPause();
-        JCVideoPlayer.releaseAllVideos();
     }
 
     @Override

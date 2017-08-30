@@ -137,7 +137,6 @@ public class ListViewMultiHolderActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        JCVideoPlayer.releaseAllVideos();
     }
 
     @Override
